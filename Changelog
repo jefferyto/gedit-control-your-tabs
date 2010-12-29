@@ -1,0 +1,10 @@
+v0.1.2 (2010-06-21):
+* Fixed error when an icon cannot be loaded for a tab state (e.g. when
+  an icon is missing from the current theme)
+
+v0.1.1 (2010-03-03):
+* Fixed error when switching tabs after an open file has been deleted
+  (but the tab is still open with the file)
+
+v0.1.0 (2010-02-25):
+* Initial release
