@@ -6,5 +6,5 @@ Name=Control Your Tabs
 Description=Switch between tabs using Ctrl-Tab / Ctrl-Shift-Tab and Ctrl-PageUp / Ctrl-PageDown
 Authors=Jeffery To <jeffery.to@gmail.com>
 Copyright=Copyright © 2010 Jeffery To <jeffery.to@gmail.com>
-Website=http://www.thingsthemselves.com/gedit/
+Website=https://github.com/jefferyto/gedit-control-your-tabs
 Version=0.1.2

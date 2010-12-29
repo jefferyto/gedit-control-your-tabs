@@ -14,7 +14,7 @@
 #     the gEdit Documents panel
 #
 # Copyright (C) 2010 Jeffery To <jeffery.to@gmail.com>
-# http://www.thingsthemselves.com/gedit/
+# https://github.com/jefferyto/gedit-control-your-tabs
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
