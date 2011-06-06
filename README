@@ -11,6 +11,17 @@ Inspired by:
     TabPgUpPgDown by Eran M.
     the gEdit Documents panel
 
+
+BASIC INSTALL INSTRUCTIONS:
+
+mkdir ~/.gnome2/gedit/plugins
+cd ~/.gnome2/gedit/plugins
+git clone https://github.com/jefferyto/gedit-control-your-tabs.git
+ln -s gedit-control-your-tabs/controlyourtabs.gedit-plugin
+
+In the gedit menu, Edit > Preferences > Plugins, select Control Your Tabs.
+
+
 Copyright (C) 2010 Jeffery To <jeffery.to@gmail.com>
 https://github.com/jefferyto/gedit-control-your-tabs
 
