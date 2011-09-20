@@ -1,6 +1,6 @@
 [Gedit Plugin]
 Loader=python
-Module=controlyourtabs
+Module=gedit-control-your-tabs
 IAge=2
 Name=Control Your Tabs
 Description=Switch between tabs using Ctrl-Tab / Ctrl-Shift-Tab and Ctrl-PageUp / Ctrl-PageDown
