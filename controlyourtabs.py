@@ -3,7 +3,7 @@
 # Control Your Tabs, a plugin for gedit
 # Switch between tabs using Ctrl-Tab / Ctrl-Shift-Tab and
 # Ctrl-PageUp / Ctrl-PageDown
-# v0.1.2
+# v0.2.0
 #
 # Ctrl-Tab / Ctrl-Shift-Tab switch tabs in most recently used order.
 # Ctrl-PageUp / Ctrl-PageDown switch tabs in tabbar order.
@@ -13,7 +13,7 @@
 #     TabPgUpPgDown by Eran M.
 #     the gEdit Documents panel
 #
-# Copyright (C) 2010 Jeffery To <jeffery.to@gmail.com>
+# Copyright (C) 2010-2011 Jeffery To <jeffery.to@gmail.com>
 # https://github.com/jefferyto/gedit-control-your-tabs
 #
 # This program is free software: you can redistribute it and/or modify
@@ -29,14 +29,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import gedit
-import glib
-import gtk
-import gio
+from gi.repository import GObject, Gtk, Gdk, GdkPixbuf, Gio, Gedit
 from gettext import gettext as _
 from xml.sax.saxutils import escape
 
-class ControlYourTabsWindowHelper:
+class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
+	__gtype_name__ = 'ControlYourTabsPlugin'
+
+	window = GObject.property(type=Gedit.Window)
+
 	HANDLER_IDS = 'ControlYourTabsPluginHandlerIds'
 
 	SELECTED_TAB_COLUMN = 3
@@ -54,61 +55,65 @@ class ControlYourTabsWindowHelper:
 	MAX_TAB_WINDOW_HEIGHT = 250
 
 	TAB_STATE_TO_ICON = {
-		gedit.TAB_STATE_LOADING: gtk.STOCK_OPEN,
-		gedit.TAB_STATE_REVERTING: gtk.STOCK_REVERT_TO_SAVED,
-		gedit.TAB_STATE_SAVING: gtk.STOCK_SAVE,
-		gedit.TAB_STATE_PRINTING: gtk.STOCK_PRINT,
-		gedit.TAB_STATE_PRINT_PREVIEWING: gtk.STOCK_PRINT_PREVIEW,
-		gedit.TAB_STATE_SHOWING_PRINT_PREVIEW: gtk.STOCK_PRINT_PREVIEW,
-		gedit.TAB_STATE_LOADING_ERROR: gtk.STOCK_DIALOG_ERROR,
-		gedit.TAB_STATE_REVERTING_ERROR: gtk.STOCK_DIALOG_ERROR,
-		gedit.TAB_STATE_SAVING_ERROR: gtk.STOCK_DIALOG_ERROR,
-		gedit.TAB_STATE_GENERIC_ERROR: gtk.STOCK_DIALOG_ERROR,
-		gedit.TAB_STATE_EXTERNALLY_MODIFIED_NOTIFICATION: gtk.STOCK_DIALOG_WARNING
+		Gedit.TabState.STATE_LOADING: Gtk.STOCK_OPEN,
+		Gedit.TabState.STATE_REVERTING: Gtk.STOCK_REVERT_TO_SAVED,
+		Gedit.TabState.STATE_SAVING: Gtk.STOCK_SAVE,
+		Gedit.TabState.STATE_PRINTING: Gtk.STOCK_PRINT,
+		Gedit.TabState.STATE_PRINT_PREVIEWING: Gtk.STOCK_PRINT_PREVIEW,
+		Gedit.TabState.STATE_SHOWING_PRINT_PREVIEW: Gtk.STOCK_PRINT_PREVIEW,
+		Gedit.TabState.STATE_LOADING_ERROR: Gtk.STOCK_DIALOG_ERROR,
+		Gedit.TabState.STATE_REVERTING_ERROR: Gtk.STOCK_DIALOG_ERROR,
+		Gedit.TabState.STATE_SAVING_ERROR: Gtk.STOCK_DIALOG_ERROR,
+		Gedit.TabState.STATE_GENERIC_ERROR: Gtk.STOCK_DIALOG_ERROR,
+		Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION: Gtk.STOCK_DIALOG_WARNING
 	}
 
-	def __init__(self, plugin, window):
+	def __init__(self):
+		GObject.Object.__init__(self)
+
+	def do_activate(self):
+		window = self.window
 		stack = []
 
-		tabwin = gtk.Window(gtk.WINDOW_POPUP)
+		tabwin = Gtk.Window(type=Gtk.WindowType.POPUP)
 		tabwin.set_transient_for(window)
 		tabwin.set_destroy_with_parent(True)
 		tabwin.set_accept_focus(False)
 		tabwin.set_decorated(False)
 		tabwin.set_resizable(False)
-		tabwin.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
-		tabwin.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_UTILITY)
+		tabwin.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
+		tabwin.set_type_hint(Gdk.WindowTypeHint.UTILITY)
 		tabwin.set_skip_taskbar_hint(False)
 		tabwin.set_skip_pager_hint(False)
 
-		sw = gtk.ScrolledWindow()
-		sw.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+		sw = Gtk.ScrolledWindow()
+		sw.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
 		sw.show()
 
 		tabwin.add(sw)
 
-		model = gtk.ListStore(gtk.gdk.Pixbuf, str, gedit.Tab, 'gboolean')
+		model = Gtk.ListStore(GdkPixbuf.Pixbuf, str, Gedit.Tab, 'gboolean')
 
-		view = gtk.TreeView(model)
+		view = Gtk.TreeView(model)
 		view.set_enable_search(False)
 		view.set_headers_visible(False)
 		view.show()
 
 		sw.add(view)
 
-		col = gtk.TreeViewColumn(_('Documents'))
-		col.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
-		cell = gtk.CellRendererPixbuf()
+		col = Gtk.TreeViewColumn(_('Documents'))
+		col.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
+		cell = Gtk.CellRendererPixbuf()
 		col.pack_start(cell, False)
 		col.add_attribute(cell, 'pixbuf', 0)
-		cell = gtk.CellRendererText()
+		cell = Gtk.CellRendererText()
 		col.pack_start(cell, True)
 		col.add_attribute(cell, 'markup', 1)
 
 		view.append_column(col)
 
 		sel = view.get_selection()
-		sel.set_mode(gtk.SELECTION_SINGLE)
+		sel.set_mode(Gtk.SelectionMode.SINGLE)
 
 		self.connect_handlers(model, ('row-changed',), 'model', view, sel)
 
@@ -119,19 +124,17 @@ class ControlYourTabsWindowHelper:
 		self._stack = stack
 		self._model = model
 		self._view = view
-		self._window = window
-		self._plugin = plugin
 
 		cur = window.get_active_tab()
 		if cur:
-			for tab in cur.parent.get_children():
+			for tab in cur.get_parent().get_children():
 				self.window_tab_added(window, tab, stack, model)
 			self.window_active_tab_changed(window, cur, stack, model)
 
 		self.connect_handlers(window, ('tab-added', 'tab-removed', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event'), 'window', stack, model)
 
-	def deactivate(self):
-		self.disconnect_handlers(self._window)
+	def do_deactivate(self):
+		self.disconnect_handlers(self.window)
 
 		self.end_switching()
 
@@ -146,10 +149,8 @@ class ControlYourTabsWindowHelper:
 		self._stack = None
 		self._model = None
 		self._view = None
-		self._window = None
-		self._plugin = None
 
-	def update_ui(self):
+	def do_update_state(self):
 		pass
 
 	def model_row_changed(self, model, path, iter, view, sel):
@@ -207,31 +208,26 @@ class ControlYourTabsWindowHelper:
 		return tab_name
 
 	def tab_get_icon(self, tab):
-		theme = gtk.icon_theme_get_for_screen(tab.get_screen())
-		icon_size_width, icon_size_height = gtk.icon_size_lookup_for_settings(tab.get_settings(), gtk.ICON_SIZE_MENU)
+		theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
+		is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup_for_settings(tab.get_settings(), Gtk.IconSize.MENU)
 		state = tab.get_state()
 
 		if state in self.TAB_STATE_TO_ICON:
 			try:
 				pixbuf = self.get_stock_icon(theme, self.TAB_STATE_TO_ICON[state], icon_size_height)
-			except glib.GError:
+			except GObject.GError:
 				pixbuf = None
 		else:
 			pixbuf = None
 
 		if not pixbuf:
-			uri = tab.get_document().get_uri()
-			if uri:
-				location = gio.File(uri)
-			else:
-				location = None
-			pixbuf = self.get_icon(theme, location, icon_size_height)
+			pixbuf = self.get_icon(theme, tab.get_document().get_location(), icon_size_height)
 
 		return pixbuf
 
 	def window_key_press_event(self, window, event, stack, model):
-		key = gtk.gdk.keyval_name(event.keyval)
-		state = event.state & gtk.accelerator_get_default_mod_mask()
+		key = Gdk.keyval_name(event.keyval)
+		state = event.state & Gtk.accelerator_get_default_mod_mask()
 
 		if key == 'Control_L':
 			self._ctrl_l = True
@@ -239,11 +235,11 @@ class ControlYourTabsWindowHelper:
 		if key == 'Control_R':
 			self._ctrl_r = True
 
-		if key in self.META_KEYS or not state & gtk.gdk.CONTROL_MASK:
+		if key in self.META_KEYS or not state & Gdk.ModifierType.CONTROL_MASK:
 			return False
 
-		is_ctrl = state == gtk.gdk.CONTROL_MASK
-		is_ctrl_shift = state == gtk.gdk.CONTROL_MASK | gtk.gdk.SHIFT_MASK
+		is_ctrl = state == Gdk.ModifierType.CONTROL_MASK
+		is_ctrl_shift = state == Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK
 		is_tab_key = key in ('ISO_Left_Tab', 'Tab')
 		is_page_key = key in ('Page_Up', 'Page_Down')
 		is_up_dir = key in ('ISO_Left_Tab', 'Page_Up')
@@ -256,7 +252,7 @@ class ControlYourTabsWindowHelper:
 		if is_tab_key:
 			tabs = stack
 		else:
-			tabs = cur.parent.get_children()
+			tabs = cur.get_parent().get_children()
 		tlen = len(tabs)
 
 		if cur and tlen > 1 and cur in tabs:
@@ -273,8 +269,8 @@ class ControlYourTabsWindowHelper:
 				view = self._view
 				tabwin = view.get_toplevel()
 
-				w, h = view.size_request()
-				tabwin.set_size_request(-1, min(h, self.MAX_TAB_WINDOW_HEIGHT))
+				min_size, nat_size = view.get_preferred_size()
+				tabwin.set_size_request(-1, min(nat_size.height, self.MAX_TAB_WINDOW_HEIGHT))
 				tabwin.present()
 
 				self._tabbing = True
@@ -286,7 +282,7 @@ class ControlYourTabsWindowHelper:
 		return True
 
 	def window_key_release_event(self, window, event, stack, model):
-		key = gtk.gdk.keyval_name(event.keyval)
+		key = Gdk.keyval_name(event.keyval)
 
 		if key == 'Control_L':
 			self._ctrl_l = False
@@ -308,7 +304,7 @@ class ControlYourTabsWindowHelper:
 			self._ctrl_r = False
 			self._view.get_toplevel().hide()
 
-			window = self._window
+			window = self.window
 			tab = window.get_active_tab()
 			if tab:
 				self.window_active_tab_changed(window, tab, self._stack, self._model)
@@ -377,31 +373,31 @@ class ControlYourTabsWindowHelper:
 
 	def get_icon(self, theme, location, size):
 		if not location:
-			return self.get_stock_icon(theme, gtk.STOCK_FILE, size)
+			return self.get_stock_icon(theme, Gtk.STOCK_FILE, size)
 
 		# FIXME: Doing a sync stat is bad, this should be fixed
 		try:
-			info = location.query_info(gio.FILE_ATTRIBUTE_STANDARD_ICON, gio.FILE_QUERY_INFO_NONE, None)
-		except gio.Error:
+			info = location.query_info(Gio.FILE_ATTRIBUTE_STANDARD_ICON, Gio.FileQueryInfoFlags.NONE, None)
+		except GObject.GError:
 			info = None
 
 		if not info:
-			return self.get_stock_icon(theme, gtk.STOCK_FILE, size)
+			return self.get_stock_icon(theme, Gtk.STOCK_FILE, size)
 
 		icon = info.get_icon()
 
 		if not icon:
-			return self.get_stock_icon(theme, gtk.STOCK_FILE, size)
+			return self.get_stock_icon(theme, Gtk.STOCK_FILE, size)
 
 		icon_info = theme.lookup_by_gicon(icon, size, 0);
 
 		if not icon_info:
-			return self.get_stock_icon(theme, gtk.STOCK_FILE, size)
+			return self.get_stock_icon(theme, Gtk.STOCK_FILE, size)
 
 		pixbuf = icon_info.load_icon()
 
 		if not pixbuf:
-			return self.get_stock_icon(theme, gtk.STOCK_FILE, size)
+			return self.get_stock_icon(theme, Gtk.STOCK_FILE, size)
 
 		return self.resize_icon(pixbuf, size)
 
@@ -418,22 +414,6 @@ class ControlYourTabsWindowHelper:
 				width = width * size / height
 				height = size
 
-			pixbuf = pixbuf.scale_simple(width, height, gtk.gdk.INTERP_BILINEAR)
+			pixbuf = pixbuf.scale_simple(width, height, Gdk.INTERP_BILINEAR)
 
 		return pixbuf
-
-class ControlYourTabsPlugin(gedit.Plugin):
-	def __init__(self):
-		gedit.Plugin.__init__(self)
-		self._instances = {}
-
-	def activate(self, window):
-		self._instances[window] = ControlYourTabsWindowHelper(self, window)
-
-	def deactivate(self, window):
-		self._instances[window].deactivate()
-		del self._instances[window]
-
-	def update_ui(self, window):
-		self._instances[window].update_ui()
-
