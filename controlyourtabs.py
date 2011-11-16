@@ -11,7 +11,7 @@
 # Inspired by:
 #     TabSwitch by Elia Sarti
 #     TabPgUpPgDown by Eran M.
-#     the gEdit Documents panel
+#     the gedit Documents panel
 #
 # Copyright (C) 2010-2011 Jeffery To <jeffery.to@gmail.com>
 # https://github.com/jefferyto/gedit-control-your-tabs
