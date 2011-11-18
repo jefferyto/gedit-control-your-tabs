@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 #
 # Control Your Tabs, a plugin for gedit
-# Switch between tabs using Ctrl-Tab / Ctrl-Shift-Tab and
-# Ctrl-PageUp / Ctrl-PageDown
+# Switch between tabs using Ctrl+Tab / Ctrl+Shift+Tab and
+# Ctrl+PageUp / Ctrl+PageDown
 # v0.2.0
 #
-# Ctrl-Tab / Ctrl-Shift-Tab switch tabs in most recently used order.
-# Ctrl-PageUp / Ctrl-PageDown switch tabs in tabbar order.
+# Ctrl+Tab / Ctrl+Shift+Tab switch tabs in most recently used order.
+# Ctrl+PageUp / Ctrl+PageDown switch tabs in tabbar order.
 #
 # Inspired by:
 #     TabSwitch by Elia Sarti
