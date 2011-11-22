@@ -15,9 +15,13 @@ at <https://github.com/jefferyto/gedit-control-your-tabs/issues>.
 
 ## Requirements ##
 
-v0.2.0 and higher requires at least gedit 3.2 (it hasn't been tested with gedit 3.0); gedit 2 users should use [v0.1.2][].
+v0.2.0 and higher requires at least gedit 3.2. (Untested with gedit 3.0; it *may* work :-) )
 
-## Inspired by ##
+gedit 2 users should use [v0.1.2][].
+
+## Credits ##
+
+Inspired by
 
 *   [TabSwitch][] by Elia Sarti
 *   [TabPgUpPgDown][] by Eran M.
