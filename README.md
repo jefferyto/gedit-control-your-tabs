@@ -15,7 +15,7 @@ at <https://github.com/jefferyto/gedit-control-your-tabs/issues>.
 
 ## Requirements ##
 
-v0.2.0 and higher requires at least gedit 3.2; gedit 2 users should use [v0.1.2][].
+v0.2.0 and higher requires at least gedit 3.2 (it hasn't been tested with gedit 3.0); gedit 2 users should use [v0.1.2][].
 
 ## Inspired by ##
 

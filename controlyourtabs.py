@@ -5,14 +5,6 @@
 # Ctrl+PageUp / Ctrl+PageDown
 # v0.2.0
 #
-# Ctrl+Tab / Ctrl+Shift+Tab switch tabs in most recently used order.
-# Ctrl+PageUp / Ctrl+PageDown switch tabs in tabbar order.
-#
-# Inspired by:
-#     TabSwitch by Elia Sarti
-#     TabPgUpPgDown by Eran M.
-#     the gedit Documents panel
-#
 # Copyright (C) 2010-2011 Jeffery To <jeffery.to@gmail.com>
 # https://github.com/jefferyto/gedit-control-your-tabs
 #
