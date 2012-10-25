@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 #
-# Control Your Tabs, a plugin for gedit
-# Switch between tabs using Ctrl+Tab / Ctrl+Shift+Tab and
-# Ctrl+PageUp / Ctrl+PageDown
-# v0.2.0
+# controlyourtabs.py
+# This file is part of Control Your Tabs, a plugin for gedit
 #
-# Copyright (C) 2010-2011 Jeffery To <jeffery.to@gmail.com>
+# Copyright (C) 2010-2012 Jeffery To <jeffery.to@gmail.com>
 # https://github.com/jefferyto/gedit-control-your-tabs
 #
 # This program is free software: you can redistribute it and/or modify
