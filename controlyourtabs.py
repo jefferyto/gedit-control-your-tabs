@@ -365,26 +365,25 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 				self.window_active_tab_changed(window, tab, self._notebooks)
 
 	def connect_handlers(self, obj, signals, m, *args):
-		l_ids = obj.get_data(self.HANDLER_IDS)
-		if not l_ids:
-			l_ids = []
+		HANDLER_IDS = self.HANDLER_IDS
+		l_ids = getattr(obj, HANDLER_IDS) if hasattr(obj, HANDLER_IDS) else []
 
 		for signal in signals:
 			if type(m).__name__ == 'str':
-				method = getattr(self, m + '_' + signal.replace('-', '_'))
+				method = getattr(self, m + '_' + signal.replace('-', '_').replace('::', '_'))
 			else:
 				method = m
 			l_ids.append(obj.connect(signal, method, *args))
 
-		obj.set_data(self.HANDLER_IDS, l_ids)
+		setattr(obj, HANDLER_IDS, l_ids)
 
 	def disconnect_handlers(self, obj):
-		l_ids = obj.get_data(self.HANDLER_IDS)
-		if l_ids:
-			for l_id in l_ids:
+		HANDLER_IDS = self.HANDLER_IDS
+		if hasattr(obj, HANDLER_IDS):
+			for l_id in getattr(obj, HANDLER_IDS):
 				obj.disconnect(l_id)
 
-			obj.set_data(self.HANDLER_IDS, None)
+			delattr(obj, HANDLER_IDS)
 
 	# this is a /hack/
 
