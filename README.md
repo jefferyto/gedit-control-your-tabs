@@ -6,7 +6,7 @@ Ctrl+PageUp / Ctrl+PageDown
 v0.2.1
 
 All bug reports, feature requests and miscellaneous comments are welcome
-at <https://github.com/jefferyto/gedit-control-your-tabs/issues>.
+at the [project issue tracker][].
 
 ## Requirements ##
 
@@ -44,8 +44,9 @@ Copyright &copy; 2010-2012 Jeffery To <jeffery.to@gmail.com>
 Available under GNU General Public License version 3
 
 
-[v0.1.2]: https://github.com/jefferyto/gedit-control-your-tabs/zipball/v0.1.2
-[zip]: https://github.com/jefferyto/gedit-control-your-tabs/zipball/master
-[tar.gz]: https://github.com/jefferyto/gedit-control-your-tabs/tarball/master
+[project issue tracker]: https://github.com/jefferyto/gedit-control-your-tabs/issues
+[zip]: https://github.com/jefferyto/gedit-control-your-tabs/archive/master.zip
+[tar.gz]: https://github.com/jefferyto/gedit-control-your-tabs/archive/master.tar.gz
+[v0.1.2]: https://github.com/jefferyto/gedit-control-your-tabs/archive/v0.1.2.zip
 [TabSwitch]: http://live.gnome.org/Gedit/Plugins?action=AttachFile&do=get&target=tabswitch.tar.gz
 [TabPgUpPgDown]: http://live.gnome.org/Gedit/Plugins?action=AttachFile&do=get&target=tabpgupdown.tar.gz
