@@ -386,7 +386,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		if doc.get_modified():
 			tab_name = '<i>%s</i>' % escape(docname)
 		else:
-			tab_name = docname
+			tab_name = escape(docname)
 
 		if doc.get_readonly():
 			tab_name += ' [<i>%s</i>]' % escape(_('Read Only'))
