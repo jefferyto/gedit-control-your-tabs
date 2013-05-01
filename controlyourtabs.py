@@ -40,7 +40,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 	             'Alt_L', 'Alt_R')
 	             # Compose, Apple?
 
-	# modified from #define in gedit-tab.c
+	# based on #define in gedit-documents-panel.c
 	MAX_DOC_NAME_LENGTH = 60
 
 	MAX_TAB_WINDOW_HEIGHT = 250
