@@ -40,10 +40,12 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 	             'Alt_L', 'Alt_R')
 	             # Compose, Apple?
 
+	# based on #define in gedit-documents-panel.c
 	MAX_DOC_NAME_LENGTH = 60
 
 	MAX_TAB_WINDOW_HEIGHT = 250
 
+	# based on switch statement in _gedit_tab_get_icon() in gedit-tab.c
 	TAB_STATE_TO_ICON = {
 		Gedit.TabState.STATE_LOADING: Gtk.STOCK_OPEN,
 		Gedit.TabState.STATE_REVERTING: Gtk.STOCK_REVERT_TO_SAVED,
@@ -57,6 +59,10 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		Gedit.TabState.STATE_GENERIC_ERROR: Gtk.STOCK_DIALOG_ERROR,
 		Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION: Gtk.STOCK_DIALOG_WARNING
 	}
+
+
+
+	# Plugin interface
 
 	def __init__(self):
 		GObject.Object.__init__(self)
@@ -141,6 +147,10 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 
 	def do_update_state(self):
 		pass
+
+
+
+	# Callbacks and helpers
 
 	def setup(self, cur):
 		notebooks = self._notebooks
@@ -242,39 +252,6 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 			model[path][0] = self.tab_get_icon(tab)
 			model[path][1] = self.tab_get_name(tab)
 
-	def tab_get_name(self, tab):
-		doc = tab.get_document()
-		name = doc.get_short_name_for_display()
-		docname = self.str_middle_truncate(name, self.MAX_DOC_NAME_LENGTH)
-
-		if doc.get_modified():
-			tab_name = '<i>%s</i>' % escape(docname)
-		else:
-			tab_name = docname
-
-		if doc.get_readonly():
-			tab_name += ' [<i>%s</i>]' % escape(_('Read Only'))
-
-		return tab_name
-
-	def tab_get_icon(self, tab):
-		theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
-		is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup_for_settings(tab.get_settings(), Gtk.IconSize.MENU)
-		state = tab.get_state()
-
-		if state in self.TAB_STATE_TO_ICON:
-			try:
-				pixbuf = self.get_stock_icon(theme, self.TAB_STATE_TO_ICON[state], icon_size_height)
-			except GObject.GError:
-				pixbuf = None
-		else:
-			pixbuf = None
-
-		if not pixbuf:
-			pixbuf = self.get_icon(theme, tab.get_document().get_location(), icon_size_height)
-
-		return pixbuf
-
 	def window_key_press_event(self, window, event, notebooks):
 		key = Gdk.keyval_name(event.keyval)
 		state = event.state & Gtk.accelerator_get_default_mod_mask()
@@ -362,6 +339,10 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 			if tab:
 				self.window_active_tab_changed(window, tab, self._notebooks)
 
+
+
+	# Utilities
+
 	def connect_handlers(self, obj, signals, m, *args):
 		HANDLER_IDS = self.HANDLER_IDS
 		l_ids = getattr(obj, HANDLER_IDS) if hasattr(obj, HANDLER_IDS) else []
@@ -384,7 +365,6 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 			delattr(obj, HANDLER_IDS)
 
 	# this is a /hack/
-
 	def get_multi_notebook(self, tab):
 		multi = tab.get_parent()
 		while multi:
@@ -393,46 +373,51 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 			multi = multi.get_parent()
 		return multi
 
-	# following functions taken from gedit
 
-	def str_middle_truncate(self, string, truncate_length):
-		return self.str_truncate(string, truncate_length, True)
 
-	def str_end_truncate(self, string, truncate_length):
-		return self.str_truncate(string, truncate_length, False)
+	# Taken from gedit
 
-	def str_truncate(self, string, truncate_length, middle):
-		delimiter = u'\u2026'
+	# based on tab_get_name() in gedit-documents-panel.c
+	def tab_get_name(self, tab):
+		doc = tab.get_document()
+		name = doc.get_short_name_for_display()
+		docname = Gedit.utils_str_middle_truncate(name, self.MAX_DOC_NAME_LENGTH)
 
-		# It doesnt make sense to truncate strings to less than
-		# the size of the delimiter plus 2 characters (one on each
-		# side)
-		delimiter_length = len(delimiter)
-		if truncate_length < (delimiter_length + 2):
-			return string
-
-		n_chars = len(string)
-
-		# Make sure the string is not already small enough.
-		if n_chars <= truncate_length:
-			return string
-
-		# Find the 'middle' where the truncation will occur.
-		if middle:
-			num_left_chars = (truncate_length - delimiter_length) / 2
-			right_offset = n_chars - truncate_length + num_left_chars + delimiter_length
-
-			truncated = string[:num_left_chars] + delimiter + string[right_offset:]
+		if doc.get_modified():
+			tab_name = '<i>%s</i>' % escape(docname)
 		else:
-			num_left_chars = truncate_length - delimiter_length
-			truncated = string[:num_left_chars] + delimiter
+			tab_name = escape(docname)
 
-		return truncated
+		if doc.get_readonly():
+			tab_name += ' [<i>%s</i>]' % escape(_('Read Only'))
 
+		return tab_name
+
+	# based on _gedit_tab_get_icon() in gedit-tab.c
+	def tab_get_icon(self, tab):
+		theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
+		is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup_for_settings(tab.get_settings(), Gtk.IconSize.MENU)
+		state = tab.get_state()
+
+		if state in self.TAB_STATE_TO_ICON:
+			try:
+				pixbuf = self.get_stock_icon(theme, self.TAB_STATE_TO_ICON[state], icon_size_height)
+			except GObject.GError:
+				pixbuf = None
+		else:
+			pixbuf = None
+
+		if not pixbuf:
+			pixbuf = self.get_icon(theme, tab.get_document().get_location(), icon_size_height)
+
+		return pixbuf
+
+	# based on get_stock_icon() in gedit-tab.c
 	def get_stock_icon(self, theme, stock, size):
 		pixbuf = theme.load_icon(stock, size, 0)
 		return self.resize_icon(pixbuf, size)
 
+	# based on get_icon() in gedit-tab.c
 	def get_icon(self, theme, location, size):
 		if not location:
 			return self.get_stock_icon(theme, Gtk.STOCK_FILE, size)
@@ -463,6 +448,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 
 		return self.resize_icon(pixbuf, size)
 
+	# based on resize_icon() in gedit-tab.c
 	def resize_icon(self, pixbuf, size):
 		width = pixbuf.get_width()
 		height = pixbuf.get_height()
@@ -479,3 +465,4 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 			pixbuf = pixbuf.scale_simple(width, height, Gdk.INTERP_BILINEAR)
 
 		return pixbuf
+
