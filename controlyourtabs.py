@@ -40,10 +40,12 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 	             'Alt_L', 'Alt_R')
 	             # Compose, Apple?
 
+	# modified from #define in gedit-tab.c
 	MAX_DOC_NAME_LENGTH = 60
 
 	MAX_TAB_WINDOW_HEIGHT = 250
 
+	# based on switch statement in _gedit_tab_get_icon() in gedit-tab.c
 	TAB_STATE_TO_ICON = {
 		Gedit.TabState.STATE_LOADING: Gtk.STOCK_OPEN,
 		Gedit.TabState.STATE_REVERTING: Gtk.STOCK_REVERT_TO_SAVED,
@@ -375,10 +377,11 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 
 	# Taken from gedit
 
+	# based on tab_get_name() in gedit-documents-panel.c
 	def tab_get_name(self, tab):
 		doc = tab.get_document()
 		name = doc.get_short_name_for_display()
-		docname = self.str_middle_truncate(name, self.MAX_DOC_NAME_LENGTH)
+		docname = Gedit.utils_str_middle_truncate(name, self.MAX_DOC_NAME_LENGTH)
 
 		if doc.get_modified():
 			tab_name = '<i>%s</i>' % escape(docname)
@@ -390,6 +393,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 
 		return tab_name
 
+	# based on _gedit_tab_get_icon() in gedit-tab.c
 	def tab_get_icon(self, tab):
 		theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
 		is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup_for_settings(tab.get_settings(), Gtk.IconSize.MENU)
@@ -408,44 +412,12 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 
 		return pixbuf
 
-	def str_middle_truncate(self, string, truncate_length):
-		return self.str_truncate(string, truncate_length, True)
-
-	def str_end_truncate(self, string, truncate_length):
-		return self.str_truncate(string, truncate_length, False)
-
-	def str_truncate(self, string, truncate_length, middle):
-		delimiter = u'\u2026'
-
-		# It doesnt make sense to truncate strings to less than
-		# the size of the delimiter plus 2 characters (one on each
-		# side)
-		delimiter_length = len(delimiter)
-		if truncate_length < (delimiter_length + 2):
-			return string
-
-		n_chars = len(string)
-
-		# Make sure the string is not already small enough.
-		if n_chars <= truncate_length:
-			return string
-
-		# Find the 'middle' where the truncation will occur.
-		if middle:
-			num_left_chars = (truncate_length - delimiter_length) / 2
-			right_offset = n_chars - truncate_length + num_left_chars + delimiter_length
-
-			truncated = string[:num_left_chars] + delimiter + string[right_offset:]
-		else:
-			num_left_chars = truncate_length - delimiter_length
-			truncated = string[:num_left_chars] + delimiter
-
-		return truncated
-
+	# based on get_stock_icon() in gedit-tab.c
 	def get_stock_icon(self, theme, stock, size):
 		pixbuf = theme.load_icon(stock, size, 0)
 		return self.resize_icon(pixbuf, size)
 
+	# based on get_icon() in gedit-tab.c
 	def get_icon(self, theme, location, size):
 		if not location:
 			return self.get_stock_icon(theme, Gtk.STOCK_FILE, size)
@@ -476,6 +448,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 
 		return self.resize_icon(pixbuf, size)
 
+	# based on resize_icon() in gedit-tab.c
 	def resize_icon(self, pixbuf, size):
 		width = pixbuf.get_width()
 		height = pixbuf.get_height()
