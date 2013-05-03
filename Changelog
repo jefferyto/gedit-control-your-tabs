@@ -1,5 +1,6 @@
-? ():
-* Minor fixes
+v0.2.2 (2013-05-03):
+* Fixed minor bug when the document name contains HTML tags
+* Minor tweaks
 
 v0.2.1 (2012-10-26):
 * Minor tweaks

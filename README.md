@@ -3,7 +3,7 @@
 Switch between document tabs using Ctrl+Tab / Ctrl+Shift+Tab and
 Ctrl+PageUp / Ctrl+PageDown  
 <https://github.com/jefferyto/gedit-control-your-tabs>  
-v0.2.1
+v0.2.2
 
 All bug reports, feature requests and miscellaneous comments are welcome
 at the [project issue tracker][].
@@ -39,7 +39,7 @@ Inspired by:
 
 ## License ##
 
-Copyright &copy; 2010-2012 Jeffery To <jeffery.to@gmail.com>
+Copyright &copy; 2010-2013 Jeffery To <jeffery.to@gmail.com>
 
 Available under GNU General Public License version 3
 
