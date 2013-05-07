@@ -166,7 +166,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 			self.connect_handlers(self.window, ('tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event'), 'window', notebooks)
 
 		else:
-			print 'ControlYourTabsPlugin: cannot find multi notebook from', cur
+			print ('ControlYourTabsPlugin: cannot find multi notebook from', cur)
 
 	def multi_notebook_notebook_added(self, multi, notebook, notebooks):
 		if notebook not in notebooks:
