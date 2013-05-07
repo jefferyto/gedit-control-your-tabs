@@ -1,5 +1,5 @@
 [Plugin]
-Loader=python
+Loader=python3
 Module=controlyourtabs
 IAge=3
 Name=Control Your Tabs
