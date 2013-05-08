@@ -39,7 +39,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 	             'Alt_L', 'Alt_R')
 	             # Compose, Apple?
 
-	# based on #define in gedit-documents-panel.c
+	# based on MAX_DOC_NAME_LENGTH in gedit-documents-panel.c
 	MAX_DOC_NAME_LENGTH = 60
 
 	MAX_TAB_WINDOW_HEIGHT = 250
@@ -58,10 +58,6 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		Gedit.TabState.STATE_GENERIC_ERROR: Gtk.STOCK_DIALOG_ERROR,
 		Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION: Gtk.STOCK_DIALOG_WARNING
 	}
-
-
-
-	# Plugin interface
 
 	def __init__(self):
 		GObject.Object.__init__(self)
@@ -146,10 +142,6 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 
 	def do_update_state(self):
 		pass
-
-
-
-	# Callbacks and helpers
 
 	def setup(self, cur):
 		notebooks = self._notebooks
@@ -338,44 +330,6 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 			if tab:
 				self.window_active_tab_changed(window, tab, self._notebooks)
 
-
-
-	# Utilities
-
-	def connect_handlers(self, obj, signals, m, *args):
-		HANDLER_IDS = self.HANDLER_IDS
-		l_ids = getattr(obj, HANDLER_IDS) if hasattr(obj, HANDLER_IDS) else []
-
-		for signal in signals:
-			if type(m).__name__ == 'str':
-				method = getattr(self, m + '_' + signal.replace('-', '_').replace('::', '_'))
-			else:
-				method = m
-			l_ids.append(obj.connect(signal, method, *args))
-
-		setattr(obj, HANDLER_IDS, l_ids)
-
-	def disconnect_handlers(self, obj):
-		HANDLER_IDS = self.HANDLER_IDS
-		if hasattr(obj, HANDLER_IDS):
-			for l_id in getattr(obj, HANDLER_IDS):
-				obj.disconnect(l_id)
-
-			delattr(obj, HANDLER_IDS)
-
-	# this is a /hack/
-	def get_multi_notebook(self, tab):
-		multi = tab.get_parent()
-		while multi:
-			if multi.__gtype__.name == 'GeditMultiNotebook':
-				break
-			multi = multi.get_parent()
-		return multi
-
-
-
-	# Taken from gedit
-
 	# based on tab_get_name() in gedit-documents-panel.c
 	def tab_get_name(self, tab):
 		doc = tab.get_document()
@@ -465,3 +419,32 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 
 		return pixbuf
 
+	def connect_handlers(self, obj, signals, m, *args):
+		HANDLER_IDS = self.HANDLER_IDS
+		l_ids = getattr(obj, HANDLER_IDS) if hasattr(obj, HANDLER_IDS) else []
+
+		for signal in signals:
+			if type(m).__name__ == 'str':
+				method = getattr(self, m + '_' + signal.replace('-', '_').replace('::', '_'))
+			else:
+				method = m
+			l_ids.append(obj.connect(signal, method, *args))
+
+		setattr(obj, HANDLER_IDS, l_ids)
+
+	def disconnect_handlers(self, obj):
+		HANDLER_IDS = self.HANDLER_IDS
+		if hasattr(obj, HANDLER_IDS):
+			for l_id in getattr(obj, HANDLER_IDS):
+				obj.disconnect(l_id)
+
+			delattr(obj, HANDLER_IDS)
+
+	# this is a /hack/
+	def get_multi_notebook(self, tab):
+		multi = tab.get_parent()
+		while multi:
+			if multi.__gtype__.name == 'GeditMultiNotebook':
+				break
+			multi = multi.get_parent()
+		return multi
