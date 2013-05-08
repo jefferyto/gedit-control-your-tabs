@@ -29,8 +29,11 @@ gedit 2 users should use [v0.1.2][].
 
 ## Usage ##
 
-*   Ctrl+Tab / Ctrl+Shift+Tab switch tabs in most recently used order.
-*   Ctrl+PageUp / Ctrl+PageDown switch tabs in tabbar order.
+*   <kbd>Ctrl</kbd>+<kbd>Tab</kbd> /
+    <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> switch tabs in most
+    recently used order.
+*   <kbd>Ctrl</kbd>+<kbd>Page Up</kbd> /
+    <kbd>Ctrl</kbd>+<kbd>Page Down</kbd> switch tabs in tabbar order.
 
 ## Credits ##
 
