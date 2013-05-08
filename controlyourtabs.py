@@ -112,11 +112,11 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		self._notebooks = notebooks
 		self._view = view
 
-		cur = window.get_active_tab()
-		if cur:
-			self._setup(cur)
+		tab = window.get_active_tab()
+		if tab:
+			self._setup(tab)
 			if self._multi:
-				self.on_window_active_tab_changed(window, cur, notebooks)
+				self.on_window_active_tab_changed(window, tab, notebooks)
 
 		if not self._multi:
 			self._connect_handlers(window, ('tab-added',), 'window')
@@ -143,9 +143,13 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 	def do_update_state(self):
 		pass
 
-	def _setup(self, cur):
+	def on_window_tab_added(self, window, tab):
+		self._disconnect_handlers(window)
+		self._setup(tab)
+
+	def _setup(self, tab):
 		notebooks = self._notebooks
-		multi = self._get_multi_notebook(cur)
+		multi = self._get_multi_notebook(tab)
 
 		if multi:
 			self._connect_handlers(multi, ('notebook-added', 'notebook-removed', 'tab-added', 'tab-removed'), 'multi_notebook', notebooks)
@@ -157,7 +161,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 			self._connect_handlers(self.window, ('tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event'), 'window', notebooks)
 
 		else:
-			print "ControlYourTabsPlugin: cannot find multi notebook from", cur
+			print "ControlYourTabsPlugin: cannot find multi notebook from", tab
 
 	def on_multi_notebook_notebook_added(self, multi, notebook, notebooks):
 		if notebook not in notebooks:
@@ -202,10 +206,6 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 				view.scroll_to_cell(path, None, False, 0, 0)
 			else:
 				sel.unselect_path(path)
-
-	def on_window_tab_added(self, window, tab):
-		if not self._multi:
-			self._setup(tab)
 
 	def on_window_tabs_reordered(self, window, notebooks):
 		multi = self._multi
