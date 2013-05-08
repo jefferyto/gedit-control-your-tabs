@@ -20,7 +20,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from gi.repository import GObject, Gtk, Gdk, GdkPixbuf, Gio, Gedit
-from gettext import gettext as _
 from xml.sax.saxutils import escape
 
 class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
