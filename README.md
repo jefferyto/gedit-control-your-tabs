@@ -18,8 +18,11 @@ gedit 2 users should use [v0.1.2][].
 ## Installation ##
 
 1.  Download the source code (as [zip][] or [tar.gz][]) and extract.
-2.  Copy `controlyourtabs.plugin` and `controlyourtabs.py` into
-    `~/.local/share/gedit/plugins` (create if it does not exist).
+2.  Copy `controlyourtabs.py` and the appropriate `.plugin` file into
+    `~/.local/share/gedit/plugins` (create if it does not exist):
+    *   For gedit 3.6 and earlier, copy `controlyourtabs.plugin.python2`
+        and rename to `controlyourtabs.plugin`.
+    *   For gedit 3.8 and later, copy `controlyourtabs.plugin`.
 3.  Restart gedit, select **Edit > Preferences** (or
     **gedit > Preferences** on Mac), and enable the plugin in the
     **Plugins** tab.

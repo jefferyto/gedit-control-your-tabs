@@ -1,6 +1,6 @@
-# This file is for gedit 3.8 and later
+# This file is for gedit 3.6 and earlier
 [Plugin]
-Loader=python3
+Loader=python
 Module=controlyourtabs
 IAge=3
 Name=Control Your Tabs
