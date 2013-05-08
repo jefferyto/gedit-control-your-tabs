@@ -90,7 +90,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 
 		sw.add(view)
 
-		col = Gtk.TreeViewColumn(_('Documents'))
+		col = Gtk.TreeViewColumn(_("Documents"))
 		col.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
 		cell = Gtk.CellRendererPixbuf()
 		col.pack_start(cell, False)
@@ -157,7 +157,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 			self.connect_handlers(self.window, ('tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event'), 'window', notebooks)
 
 		else:
-			print 'ControlYourTabsPlugin: cannot find multi notebook from', cur
+			print "ControlYourTabsPlugin: cannot find multi notebook from", cur
 
 	def on_multi_notebook_notebook_added(self, multi, notebook, notebooks):
 		if notebook not in notebooks:
@@ -337,12 +337,12 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		docname = Gedit.utils_str_middle_truncate(name, self.MAX_DOC_NAME_LENGTH)
 
 		if doc.get_modified():
-			tab_name = '<i>%s</i>' % escape(docname)
+			tab_name = "<i>%s</i>" % escape(docname)
 		else:
 			tab_name = escape(docname)
 
 		if doc.get_readonly():
-			tab_name += ' [<i>%s</i>]' % escape(_('Read Only'))
+			tab_name += " [<i>%s</i>]" % escape(_("Read Only"))
 
 		return tab_name
 
