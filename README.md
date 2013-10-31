@@ -54,5 +54,5 @@ Available under GNU General Public License version 3
 [zip]: https://github.com/jefferyto/gedit-control-your-tabs/archive/master.zip
 [tar.gz]: https://github.com/jefferyto/gedit-control-your-tabs/archive/master.tar.gz
 [v0.1.2]: https://github.com/jefferyto/gedit-control-your-tabs/archive/v0.1.2.zip
-[TabSwitch]: http://live.gnome.org/Gedit/Plugins?action=AttachFile&do=get&target=tabswitch.tar.gz
-[TabPgUpPgDown]: http://live.gnome.org/Gedit/Plugins?action=AttachFile&do=get&target=tabpgupdown.tar.gz
+[TabSwitch]: https://wiki.gnome.org/Apps/Gedit/PluginsOld?action=AttachFile&do=view&target=tabswitch.tar.gz
+[TabPgUpPgDown]: https://wiki.gnome.org/Apps/Gedit/PluginsOld?action=AttachFile&do=view&target=tabpgupdown.tar.gz
