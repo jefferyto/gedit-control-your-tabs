@@ -18,8 +18,8 @@ gedit 2 users should use [v0.1.2][].
 ## Installation ##
 
 1.  Download the source code (as [zip][] or [tar.gz][]) and extract.
-2.  Copy `controlyourtabs.py` and the appropriate `.plugin` file into
-    `~/.local/share/gedit/plugins` (create if it does not exist):
+2.  Copy the `controlyourtabs` folder and the appropriate `.plugin` file
+    into `~/.local/share/gedit/plugins` (create if it does not exist):
     *   For gedit 3.6 and earlier, copy `controlyourtabs.plugin.python2`
         and rename to `controlyourtabs.plugin`.
     *   For gedit 3.8 and later, copy `controlyourtabs.plugin`.
@@ -34,6 +34,12 @@ gedit 2 users should use [v0.1.2][].
     recently used order.
 *   <kbd>Ctrl</kbd>+<kbd>Page Up</kbd> /
     <kbd>Ctrl</kbd>+<kbd>Page Down</kbd> switch tabs in tabbar order.
+
+## Development ##
+
+The code in `controlyourtabs/utils` comes from [python-gtk-utils][];
+changes should ideally be contributed to that project, then pulled back
+into this one with `git subtree pull`.
 
 ## Credits ##
 
@@ -54,5 +60,6 @@ Available under GNU General Public License version 3
 [zip]: https://github.com/jefferyto/gedit-control-your-tabs/archive/master.zip
 [tar.gz]: https://github.com/jefferyto/gedit-control-your-tabs/archive/master.tar.gz
 [v0.1.2]: https://github.com/jefferyto/gedit-control-your-tabs/archive/v0.1.2.zip
+[python-gtk-utils]: https://github.com/jefferyto/python-gtk-utils
 [TabSwitch]: https://wiki.gnome.org/Apps/Gedit/PluginsOld?action=AttachFile&do=view&target=tabswitch.tar.gz
 [TabPgUpPgDown]: https://wiki.gnome.org/Apps/Gedit/PluginsOld?action=AttachFile&do=view&target=tabpgupdown.tar.gz

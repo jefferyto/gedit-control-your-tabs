@@ -1,3 +1,6 @@
+TBD ():
+* Use python-gtk-utils for some plumbing
+
 v0.2.3 (2013-05-08):
 * Gedit 3.8 / Python 3 compatibility (#4, thanks thapar!)
 * Minor tweaks
