@@ -121,9 +121,11 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 			connect_handlers(self, window, ('tab-added',), 'window')
 
 	def do_deactivate(self):
-		disconnect_handlers(self, self.window)
-
 		self._end_switching()
+
+		disconnect_handlers(self, self.window)
+		if self._multi:
+			disconnect_handlers(self, self._multi)
 
 		notebooks = self._notebooks
 		for notebook in notebooks:
