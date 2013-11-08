@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# controlyourtabs.py
+# __init__.py
 # This file is part of Control Your Tabs, a plugin for gedit
 #
 # Copyright (C) 2010-2013 Jeffery To <jeffery.to@gmail.com>
@@ -21,13 +21,12 @@
 
 from gi.repository import GObject, Gtk, Gdk, GdkPixbuf, Gio, Gedit
 from xml.sax.saxutils import escape
+from .utils import connect_handlers, disconnect_handlers
 
 class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 	__gtype_name__ = 'ControlYourTabsPlugin'
 
 	window = GObject.property(type=Gedit.Window)
-
-	HANDLER_IDS = 'ControlYourTabsPluginHandlerIds'
 
 	SELECTED_TAB_COLUMN = 3
 
@@ -119,16 +118,16 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 				self.on_window_active_tab_changed(window, tab, notebooks)
 
 		if not self._multi:
-			self._connect_handlers(window, ('tab-added',), 'window')
+			connect_handlers(self, window, ('tab-added',), 'window')
 
 	def do_deactivate(self):
-		self._disconnect_handlers(self.window)
+		disconnect_handlers(self, self.window)
 
 		self._end_switching()
 
 		notebooks = self._notebooks
 		for notebook in notebooks:
-			self._disconnect_handlers(notebooks[notebook][1])
+			disconnect_handlers(self, notebooks[notebook][1])
 
 		self._view.get_toplevel().destroy()
 
@@ -144,7 +143,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		pass
 
 	def on_window_tab_added(self, window, tab):
-		self._disconnect_handlers(window)
+		disconnect_handlers(self, window)
 		self._setup(tab)
 
 	def _setup(self, tab):
@@ -152,13 +151,13 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		multi = self._get_multi_notebook(tab)
 
 		if multi:
-			self._connect_handlers(multi, ('notebook-added', 'notebook-removed', 'tab-added', 'tab-removed'), 'multi_notebook', notebooks)
+			connect_handlers(self, multi, ('notebook-added', 'notebook-removed', 'tab-added', 'tab-removed'), 'multi_notebook', notebooks)
 			self._multi = multi
 
 			for doc in self.window.get_documents():
 				self.on_multi_notebook_notebook_added(multi, Gedit.Tab.get_from_document(doc).get_parent(), notebooks)
 
-			self._connect_handlers(self.window, ('tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event'), 'window', notebooks)
+			connect_handlers(self, self.window, ('tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event'), 'window', notebooks)
 
 		elif hasattr(Gedit, 'debug_plugin_message'):
 			Gedit.debug_plugin_message("cannot find multi notebook from %s", tab)
@@ -167,7 +166,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		if notebook not in notebooks:
 			model = Gtk.ListStore(GdkPixbuf.Pixbuf, str, Gedit.Tab, 'gboolean')
 			view = self._view
-			self._connect_handlers(model, ('row-changed',), 'model', view, view.get_selection())
+			connect_handlers(self, model, ('row-changed',), 'model', view, view.get_selection())
 			notebooks[notebook] = [[], model]
 
 			for tab in notebook.get_children():
@@ -182,7 +181,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 			view = self._view
 			if view.get_model() == model:
 				view.set_model(None)
-			self._disconnect_handlers(model)
+			disconnect_handlers(self, model)
 			del notebooks[notebook]
 
 	def on_multi_notebook_tab_added(self, multi, notebook, tab, notebooks):
@@ -190,12 +189,12 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		if tab not in stack:
 			stack.append(tab)
 			model.append([self._get_tab_icon(tab), self._get_tab_name(tab), tab, False])
-			self._connect_handlers(tab, ('notify::name', 'notify::state'), self.on_sync_icon_and_name, notebooks)
+			connect_handlers(self, tab, ('notify::name', 'notify::state'), self.on_sync_icon_and_name, notebooks)
 
 	def on_multi_notebook_tab_removed(self, multi, notebook, tab, notebooks):
 		stack, model = notebooks[notebook]
 		if tab in stack:
-			self._disconnect_handlers(tab)
+			disconnect_handlers(self, tab)
 			model.remove(model.get_iter(stack.index(tab)))
 			stack.remove(tab)
 
@@ -418,27 +417,6 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 			pixbuf = pixbuf.scale_simple(width, height, Gdk.INTERP_BILINEAR)
 
 		return pixbuf
-
-	def _connect_handlers(self, obj, signals, m, *args):
-		HANDLER_IDS = self.HANDLER_IDS
-		l_ids = getattr(obj, HANDLER_IDS) if hasattr(obj, HANDLER_IDS) else []
-
-		for signal in signals:
-			if type(m).__name__ == 'str':
-				method = getattr(self, 'on_' + m + '_' + signal.replace('-', '_').replace('::', '_'))
-			else:
-				method = m
-			l_ids.append(obj.connect(signal, method, *args))
-
-		setattr(obj, HANDLER_IDS, l_ids)
-
-	def _disconnect_handlers(self, obj):
-		HANDLER_IDS = self.HANDLER_IDS
-		if hasattr(obj, HANDLER_IDS):
-			for l_id in getattr(obj, HANDLER_IDS):
-				obj.disconnect(l_id)
-
-			delattr(obj, HANDLER_IDS)
 
 	# this is a /hack/
 	def _get_multi_notebook(self, tab):
