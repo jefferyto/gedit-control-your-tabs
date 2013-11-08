@@ -1,4 +1,6 @@
 TBD ():
+* Fixed minor error if the plugin is enabled, disabled then enabled
+  again in the same gedit session, and a new tab group is added
 * Use python-gtk-utils for some plumbing
 
 v0.2.3 (2013-05-08):
