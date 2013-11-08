@@ -121,15 +121,16 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 			connect_handlers(self, window, ('tab-added',), 'window')
 
 	def do_deactivate(self):
-		self._end_switching()
-
 		disconnect_handlers(self, self.window)
+
 		if self._multi:
 			disconnect_handlers(self, self._multi)
 
 		notebooks = self._notebooks
 		for notebook in notebooks:
 			disconnect_handlers(self, notebooks[notebook][1])
+
+		self._end_switching()
 
 		self._view.get_toplevel().destroy()
 
@@ -153,12 +154,12 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		multi = self._get_multi_notebook(tab)
 
 		if multi:
-			connect_handlers(self, multi, ('notebook-added', 'notebook-removed', 'tab-added', 'tab-removed'), 'multi_notebook', notebooks)
 			self._multi = multi
 
 			for doc in self.window.get_documents():
 				self.on_multi_notebook_notebook_added(multi, Gedit.Tab.get_from_document(doc).get_parent(), notebooks)
 
+			connect_handlers(self, multi, ('notebook-added', 'notebook-removed', 'tab-added', 'tab-removed'), 'multi_notebook', notebooks)
 			connect_handlers(self, self.window, ('tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event'), 'window', notebooks)
 
 		elif hasattr(Gedit, 'debug_plugin_message'):
