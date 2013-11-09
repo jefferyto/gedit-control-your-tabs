@@ -10,9 +10,8 @@ at the [project issue tracker][].
 
 ## Requirements ##
 
-v0.2.0 and higher requires at least gedit 3.
-
-gedit 2 users should use [v0.1.2][].
+v0.2.0 and higher requires gedit 3. The last version compatible with
+gedit 2 is [v0.1.2][].
 
 ## Installation ##
 
