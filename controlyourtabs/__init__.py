@@ -76,18 +76,18 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		tabwin.set_skip_taskbar_hint(False)
 		tabwin.set_skip_pager_hint(False)
 
-		sw = Gtk.ScrolledWindow()
-		sw.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-		sw.show()
+		scrollwin = Gtk.ScrolledWindow()
+		scrollwin.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+		scrollwin.show()
 
-		tabwin.add(sw)
+		tabwin.add(scrollwin)
 
 		view = Gtk.TreeView()
 		view.set_enable_search(False)
 		view.set_headers_visible(False)
 		view.show()
 
-		sw.add(view)
+		scrollwin.add(view)
 
 		col = Gtk.TreeViewColumn(_("Documents"))
 		col.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
@@ -109,6 +109,8 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		self._ctrl_r = False
 		self._multi = None
 		self._notebooks = notebooks
+		self._tabwin = tabwin
+		self._scrollwin = scrollwin
 		self._view = view
 
 		tab = window.get_active_tab()
@@ -132,7 +134,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 
 		self._end_switching()
 
-		self._view.get_toplevel().destroy()
+		self._tabwin.destroy()
 
 		self._tabbing = None
 		self._paging = None
@@ -140,6 +142,8 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		self._ctrl_r = None
 		self._multi = None
 		self._notebooks = None
+		self._tabwin = None
+		self._scrollwin = None
 		self._view = None
 
 	def do_update_state(self):
@@ -289,11 +293,17 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 				model[stack.index(next)][self.SELECTED_TAB_COLUMN] = True
 
 				if is_tab_key:
-					view = self._view
-					tabwin = view.get_toplevel()
+					tabwin = self._tabwin
 
-					min_size, nat_size = view.get_preferred_size()
+					min_size, nat_size = self._view.get_preferred_size()
 					tabwin.set_size_request(-1, min(nat_size.height, self.MAX_TAB_WINDOW_HEIGHT))
+
+					if not self._tabbing:
+						scrollwin = self._scrollwin
+						adjustment = scrollwin.get_vadjustment()
+						adjustment.set_value(adjustment.get_lower())
+						scrollwin.set_vadjustment(adjustment)
+
 					tabwin.present()
 
 					self._tabbing = True
@@ -325,7 +335,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 			self._paging = False
 			self._ctrl_l = False
 			self._ctrl_r = False
-			self._view.get_toplevel().hide()
+			self._tabwin.hide()
 
 			window = self.window
 			tab = window.get_active_tab()
