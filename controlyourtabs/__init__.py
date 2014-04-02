@@ -76,18 +76,18 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		tabwin.set_skip_taskbar_hint(False)
 		tabwin.set_skip_pager_hint(False)
 
-		scrollwin = Gtk.ScrolledWindow()
-		scrollwin.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-		scrollwin.show()
+		sw = Gtk.ScrolledWindow()
+		sw.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+		sw.show()
 
-		tabwin.add(scrollwin)
+		tabwin.add(sw)
 
 		view = Gtk.TreeView()
 		view.set_enable_search(False)
 		view.set_headers_visible(False)
 		view.show()
 
-		scrollwin.add(view)
+		sw.add(view)
 
 		col = Gtk.TreeViewColumn(_("Documents"))
 		col.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
@@ -110,8 +110,9 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		self._multi = None
 		self._notebooks = notebooks
 		self._tabwin = tabwin
-		self._scrollwin = scrollwin
 		self._view = view
+
+		connect_handlers(self, view, ('size-allocate',), 'tree_view', tabwin)
 
 		tab = window.get_active_tab()
 		if tab:
@@ -124,6 +125,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 
 	def do_deactivate(self):
 		disconnect_handlers(self, self.window)
+		disconnect_handlers(self, self._view)
 
 		if self._multi:
 			disconnect_handlers(self, self._multi)
@@ -143,11 +145,14 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		self._multi = None
 		self._notebooks = None
 		self._tabwin = None
-		self._scrollwin = None
 		self._view = None
 
 	def do_update_state(self):
 		pass
+
+	def on_tree_view_size_allocate(self, view, allocation, tabwin):
+		min_size, nat_size = view.get_preferred_size()
+		tabwin.set_size_request(-1, min(nat_size.height, self.MAX_TAB_WINDOW_HEIGHT))
 
 	def on_window_tab_added(self, window, tab):
 		disconnect_handlers(self, window)
@@ -209,7 +214,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		if view.get_model() == model:
 			if model[path][self.SELECTED_TAB_COLUMN]:
 				sel.select_path(path)
-				view.scroll_to_cell(path, None, False, 0, 0)
+				view.scroll_to_cell(path, None, True, 0.5, 0)
 			else:
 				sel.unselect_path(path)
 
@@ -295,16 +300,11 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 				if is_tab_key:
 					tabwin = self._tabwin
 
-					min_size, nat_size = self._view.get_preferred_size()
-					tabwin.set_size_request(-1, min(nat_size.height, self.MAX_TAB_WINDOW_HEIGHT))
-
 					if not self._tabbing:
-						scrollwin = self._scrollwin
-						adjustment = scrollwin.get_vadjustment()
-						adjustment.set_value(adjustment.get_lower())
-						scrollwin.set_vadjustment(adjustment)
-
-					tabwin.present()
+						self._view.scroll_to_cell(Gtk.TreePath.new_first(), None, True, 0, 0)
+						tabwin.show_all()
+					else:
+						tabwin.present_with_time(event.time)
 
 					self._tabbing = True
 				else:
