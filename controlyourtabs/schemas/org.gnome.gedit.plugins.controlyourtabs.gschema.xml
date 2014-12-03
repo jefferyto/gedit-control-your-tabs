@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+	<schema id="org.gnome.gedit.plugins.controlyourtabs" path="/org/gnome/gedit/plugins/controlyourtabs/">
+		<key name="use-tabbar-order" type="b">
+			<default>false</default>
+			<summary>Use tabbar order</summary>
+			<description>Use tabbar order when switching tabs with Ctrl+Tab / Ctrl+Shift+Tab.</description>
+		</key>
+	</schema>
+</schemalist>
