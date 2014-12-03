@@ -19,10 +19,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import gettext
 import os.path
 from gi.repository import GObject, Gtk, Gdk, GdkPixbuf, Gio, Gedit, PeasGtk
 from xml.sax.saxutils import escape
 from .utils import connect_handlers, disconnect_handlers
+
+GETTEXT_PACKAGE = 'gedit-control-your-tabs'
+BASE_PATH = os.path.dirname(os.path.realpath(__file__))
+LOCALE_PATH = os.path.join(BASE_PATH, 'locale')
+
+gettext.bindtextdomain(GETTEXT_PACKAGE, LOCALE_PATH)
+_ = lambda s: gettext.dgettext(GETTEXT_PACKAGE, s);
 
 class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Configurable):
 	__gtype_name__ = 'ControlYourTabsPlugin'
@@ -160,13 +168,13 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 	def do_create_configure_widget(self):
 		settings = self._get_settings()
 		if settings:
-			widget = Gtk.CheckButton("Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab")
+			widget = Gtk.CheckButton(_("Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab"))
 			widget.set_active(settings.get_boolean(self.USE_TABBAR_ORDER))
 			connect_handlers(self, widget, ('toggled',), 'check_button', settings)
 			connect_handlers(self, settings, ('changed::' + self.USE_TABBAR_ORDER,), 'settings', widget)
 		else:
 			widget = Gtk.Box()
-			widget.add(Gtk.Label("Sorry, no preferences are available for this version of gedit."))
+			widget.add(Gtk.Label(_("Sorry, no preferences are available for this version of gedit.")))
 		widget.set_border_width(5)
 		return widget
 
@@ -456,9 +464,9 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		return multi
 
 	def _get_settings(self):
-		schemas_dir_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "schemas")
+		schemas_path = os.path.join(BASE_PATH, 'schemas')
 		try:
-			schema_source = Gio.SettingsSchemaSource.new_from_directory(schemas_dir_path, Gio.SettingsSchemaSource.get_default(), False)
+			schema_source = Gio.SettingsSchemaSource.new_from_directory(schemas_path, Gio.SettingsSchemaSource.get_default(), False)
 			schema = Gio.SettingsSchemaSource.lookup(schema_source, self.SETTINGS_SCHEMA_ID, False)
 			settings = Gio.Settings.new_full(schema, None, None) if schema else None
 		except AttributeError:
