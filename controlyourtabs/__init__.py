@@ -19,11 +19,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from gi.repository import GObject, Gtk, Gdk, GdkPixbuf, Gio, Gedit
+import gettext
+import os.path
+from gi.repository import GObject, Gtk, Gdk, GdkPixbuf, Gio, Gedit, PeasGtk
 from xml.sax.saxutils import escape
 from .utils import connect_handlers, disconnect_handlers
 
-class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
+GETTEXT_PACKAGE = 'gedit-control-your-tabs'
+BASE_PATH = os.path.dirname(os.path.realpath(__file__))
+LOCALE_PATH = os.path.join(BASE_PATH, 'locale')
+
+gettext.bindtextdomain(GETTEXT_PACKAGE, LOCALE_PATH)
+_ = lambda s: gettext.dgettext(GETTEXT_PACKAGE, s);
+
+class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Configurable):
 	__gtype_name__ = 'ControlYourTabsPlugin'
 
 	window = GObject.property(type=Gedit.Window)
@@ -57,6 +66,10 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		Gedit.TabState.STATE_GENERIC_ERROR: Gtk.STOCK_DIALOG_ERROR,
 		Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION: Gtk.STOCK_DIALOG_WARNING
 	}
+
+	SETTINGS_SCHEMA_ID = 'org.gnome.gedit.plugins.controlyourtabs'
+
+	USE_TABBAR_ORDER = 'use-tabbar-order'
 
 	def __init__(self):
 		GObject.Object.__init__(self)
@@ -111,6 +124,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		self._notebooks = notebooks
 		self._tabwin = tabwin
 		self._view = view
+		self._settings = self._get_settings()
 
 		connect_handlers(self, view, ('size-allocate',), 'tree_view', tabwin)
 
@@ -146,9 +160,23 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		self._notebooks = None
 		self._tabwin = None
 		self._view = None
+		self._settings = None
 
 	def do_update_state(self):
 		pass
+
+	def do_create_configure_widget(self):
+		settings = self._get_settings()
+		if settings:
+			widget = Gtk.CheckButton(_("Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab"))
+			widget.set_active(settings.get_boolean(self.USE_TABBAR_ORDER))
+			connect_handlers(self, widget, ('toggled',), 'check_button', settings)
+			connect_handlers(self, settings, ('changed::' + self.USE_TABBAR_ORDER,), 'settings', widget)
+		else:
+			widget = Gtk.Box()
+			widget.add(Gtk.Label(_("Sorry, no preferences are available for this version of gedit.")))
+		widget.set_border_width(5)
+		return widget
 
 	def on_tree_view_size_allocate(self, view, allocation, tabwin):
 		min_size, nat_size = view.get_preferred_size()
@@ -281,23 +309,18 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		if cur:
 			notebook = cur.get_parent()
 			stack, model = notebooks[notebook]
-			if is_tab_key:
-				tabs = stack
-			else:
-				tabs = notebook.get_children()
+			is_tabbing = is_tab_key and not (self._settings and self._settings.get_boolean(self.USE_TABBAR_ORDER))
+			tabs = stack if is_tabbing else notebook.get_children()
 			tlen = len(tabs)
 
 			if tlen > 1 and cur in tabs:
-				if is_up_dir:
-					i = -1
-				else:
-					i = 1
+				i = -1 if is_up_dir else 1
 				next = tabs[(tabs.index(cur) + i) % tlen]
 
 				model[stack.index(cur)][self.SELECTED_TAB_COLUMN] = False
 				model[stack.index(next)][self.SELECTED_TAB_COLUMN] = True
 
-				if is_tab_key:
+				if is_tabbing:
 					tabwin = self._tabwin
 
 					if not self._tabbing:
@@ -439,3 +462,19 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 				break
 			multi = multi.get_parent()
 		return multi
+
+	def _get_settings(self):
+		schemas_path = os.path.join(BASE_PATH, 'schemas')
+		try:
+			schema_source = Gio.SettingsSchemaSource.new_from_directory(schemas_path, Gio.SettingsSchemaSource.get_default(), False)
+			schema = Gio.SettingsSchemaSource.lookup(schema_source, self.SETTINGS_SCHEMA_ID, False)
+			settings = Gio.Settings.new_full(schema, None, None) if schema else None
+		except AttributeError:
+			settings = None
+		return settings
+
+	def on_check_button_toggled(self, widget, settings):
+		settings.set_boolean(self.USE_TABBAR_ORDER, widget.get_active())
+
+	def on_settings_changed_use_tabbar_order(self, settings, prop, widget):
+		widget.set_active(settings.get_boolean(self.USE_TABBAR_ORDER))

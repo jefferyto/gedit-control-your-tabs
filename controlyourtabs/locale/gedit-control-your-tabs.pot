@@ -1,0 +1,30 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: gedit-control-your-tabs 0.2.3\n"
+"POT-Creation-Date: 2014-12-03 21:27+0800\n"
+"PO-Revision-Date: 2014-12-03 21:27+0800\n"
+"Last-Translator: Jeffery To <jeffery.to@gmail.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+"X-Poedit-KeywordsList: _;gettext;gettext_noop\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: __init__.py:105
+msgid "Documents"
+msgstr ""
+
+#: __init__.py:171
+msgid "Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab"
+msgstr ""
+
+#: __init__.py:177
+msgid "Sorry, no preferences are available for this version of gedit."
+msgstr ""
+
+#: __init__.py:380
+msgid "Read Only"
+msgstr ""
