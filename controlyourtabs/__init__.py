@@ -47,13 +47,25 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 	             'Alt_L', 'Alt_R')
 	             # Compose, Apple?
 
+	MAX_TAB_WINDOW_HEIGHT = 250
+
 	# based on MAX_DOC_NAME_LENGTH in gedit-documents-panel.c
 	MAX_DOC_NAME_LENGTH = 60
 
-	MAX_TAB_WINDOW_HEIGHT = 250
+	# based on formats in tab_get_name() in gedit-documents-panel.c < 3.12
+	TAB_NAME_GEDITPANEL_FORMATS = {
+		'modified': "<i>%s</i>",
+		'readonly': " [<i>%s</i>]"
+	}
 
-	# based on switch statement in _gedit_tab_get_icon() in gedit-tab.c
-	TAB_STATE_TO_ICON = {
+	# based on formats in document_row_sync_tab_name_and_icon() in gedit-documents-panel.c >= 3.12
+	TAB_NAME_LISTBOX_FORMATS = {
+		'modified': "<b>%s</b>",
+		'readonly': " [%s]"
+	}
+
+	# based on switch statement in _gedit_tab_get_icon() in gedit-tab.c < 3.12
+	TAB_STATE_TO_STOCK_ICON = {
 		Gedit.TabState.STATE_LOADING: Gtk.STOCK_OPEN,
 		Gedit.TabState.STATE_REVERTING: Gtk.STOCK_REVERT_TO_SAVED,
 		Gedit.TabState.STATE_SAVING: Gtk.STOCK_SAVE,
@@ -65,6 +77,18 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		Gedit.TabState.STATE_SAVING_ERROR: Gtk.STOCK_DIALOG_ERROR,
 		Gedit.TabState.STATE_GENERIC_ERROR: Gtk.STOCK_DIALOG_ERROR,
 		Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION: Gtk.STOCK_DIALOG_WARNING
+	}
+
+	# based on switch statement in _gedit_tab_get_icon() in gedit-tab.c >= 3.12
+	TAB_STATE_TO_NAMED_ICON = {
+		Gedit.TabState.STATE_PRINTING: 'printer-printing-symbolic',
+		Gedit.TabState.STATE_PRINT_PREVIEWING: 'printer-symbolic',
+		Gedit.TabState.STATE_SHOWING_PRINT_PREVIEW: 'printer-symbolic',
+		Gedit.TabState.STATE_LOADING_ERROR: 'dialog-error-symbolic',
+		Gedit.TabState.STATE_REVERTING_ERROR: 'dialog-error-symbolic',
+		Gedit.TabState.STATE_SAVING_ERROR: 'dialog-error-symbolic',
+		Gedit.TabState.STATE_GENERIC_ERROR: 'dialog-error-symbolic',
+		Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION: 'dialog-warning-symbolic'
 	}
 
 	SETTINGS_SCHEMA_ID = 'org.gnome.gedit.plugins.controlyourtabs'
@@ -125,6 +149,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._tabwin = tabwin
 		self._view = view
 		self._settings = self._get_settings()
+		self._is_pre_3_12 = window.get_side_panel().__gtype__.name == 'GeditPanel' # FIXME find a better test
 
 		connect_handlers(self, view, ('size-allocate',), 'tree_view', tabwin)
 
@@ -161,6 +186,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._tabwin = None
 		self._view = None
 		self._settings = None
+		self._is_pre_3_12 = None
 
 	def do_update_state(self):
 		pass
@@ -365,31 +391,57 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			if tab:
 				self.on_window_active_tab_changed(window, tab, self._notebooks)
 
-	# based on tab_get_name() in gedit-documents-panel.c
+	# based on
+	# <  3.12: tab_get_name() in gedit-documents-panel.c
+	# >= 3.12: doc_get_name() and document_row_sync_tab_name_and_icon() in gedit-documents-panel.c
 	def _get_tab_name(self, tab):
 		doc = tab.get_document()
 		name = doc.get_short_name_for_display()
 		docname = Gedit.utils_str_middle_truncate(name, self.MAX_DOC_NAME_LENGTH)
+		tab_name_formats = self.TAB_NAME_GEDITPANEL_FORMATS if self._is_pre_3_12 else self.TAB_NAME_LISTBOX_FORMATS
 
-		if doc.get_modified():
-			tab_name = "<i>%s</i>" % escape(docname)
-		else:
+		if not doc.get_modified():
 			tab_name = escape(docname)
+		else:
+			tab_name = tab_name_formats['modified'] % escape(docname)
 
 		if doc.get_readonly():
-			tab_name += " [<i>%s</i>]" % escape(_("Read Only"))
+			tab_name += tab_name_formats['readonly'] % escape(_("Read-Only"))
 
 		return tab_name
 
-	# based on _gedit_tab_get_icon() in gedit-tab.c
 	def _get_tab_icon(self, tab):
+		if self._is_pre_3_12:
+			icon = self._get_stock_tab_icon(tab)
+		else:
+			icon = self._get_named_tab_icon(tab)
+		return icon
+
+	# based on _gedit_tab_get_icon() in gedit-tab.c >= 3.12
+	def _get_named_tab_icon(self, tab):
+		icon_name = None
+		pixbuf = None
+		state = tab.get_state()
+
+		if state in self.TAB_STATE_TO_NAMED_ICON:
+			icon_name = self.TAB_STATE_TO_NAMED_ICON[state]
+
+		if icon_name:
+			theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
+			is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup(Gtk.IconSize.MENU)
+			pixbuf = Gtk.IconTheme.load_icon(theme, icon_name, icon_size_height, 0)
+
+		return pixbuf
+
+	# based on _gedit_tab_get_icon() in gedit-tab.c < 3.12
+	def _get_stock_tab_icon(self, tab):
 		theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
 		is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup_for_settings(tab.get_settings(), Gtk.IconSize.MENU)
 		state = tab.get_state()
 
-		if state in self.TAB_STATE_TO_ICON:
+		if state in self.TAB_STATE_TO_STOCK_ICON:
 			try:
-				pixbuf = self._get_stock_icon(theme, self.TAB_STATE_TO_ICON[state], icon_size_height)
+				pixbuf = self._get_stock_icon(theme, self.TAB_STATE_TO_STOCK_ICON[state], icon_size_height)
 			except GObject.GError:
 				pixbuf = None
 		else:
@@ -400,12 +452,12 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 		return pixbuf
 
-	# based on get_stock_icon() in gedit-tab.c
+	# based on get_stock_icon() in gedit-tab.c in < 3.12
 	def _get_stock_icon(self, theme, stock, size):
 		pixbuf = theme.load_icon(stock, size, 0)
 		return self._resize_icon(pixbuf, size)
 
-	# based on get_icon() in gedit-tab.c
+	# based on get_icon() in gedit-tab.c in < 3.12
 	def _get_icon(self, theme, location, size):
 		if not location:
 			return self._get_stock_icon(theme, Gtk.STOCK_FILE, size)
@@ -436,7 +488,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 		return self._resize_icon(pixbuf, size)
 
-	# based on resize_icon() in gedit-tab.c
+	# based on resize_icon() in gedit-tab.c in < 3.12
 	def _resize_icon(self, pixbuf, size):
 		width = pixbuf.get_width()
 		height = pixbuf.get_height()
