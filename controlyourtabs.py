@@ -21,6 +21,11 @@
 
 from gi.repository import GObject, Gtk, Gdk, GdkPixbuf, Gio, Gedit
 from xml.sax.saxutils import escape
+global INTERP_BILINEAR
+try:
+	INTERP_BILINEAR = Gdk.INTERP_BILINEAR
+except AttributeError:
+	INTERP_BILINEAR = GdkPixbuf.InterpType.BILINEAR
 
 class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 	__gtype_name__ = 'ControlYourTabsPlugin'
@@ -415,7 +420,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 				width = width * size / height
 				height = size
 
-			pixbuf = pixbuf.scale_simple(width, height, Gdk.INTERP_BILINEAR)
+			pixbuf = pixbuf.scale_simple(width, height, INTERP_BILINEAR)
 
 		return pixbuf
 
