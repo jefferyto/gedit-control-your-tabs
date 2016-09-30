@@ -225,8 +225,11 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			connect_handlers(self, multi, ('notebook-added', 'notebook-removed', 'tab-added', 'tab-removed'), 'multi_notebook', notebooks)
 			connect_handlers(self, self.window, ('tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event'), 'window', notebooks)
 
-		elif hasattr(Gedit, 'debug_plugin_message'):
-			Gedit.debug_plugin_message("cannot find multi notebook from %s", tab)
+		else:
+			try:
+				Gedit.debug_plugin_message("cannot find multi notebook from %s", tab)
+			except AttributeError:
+				pass
 
 	def on_multi_notebook_notebook_added(self, multi, notebook, notebooks):
 		if notebook not in notebooks:
