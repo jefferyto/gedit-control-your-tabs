@@ -149,7 +149,13 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._tabwin = tabwin
 		self._view = view
 		self._settings = self._get_settings()
-		self._is_pre_3_12 = window.get_side_panel().__gtype__.name == 'GeditPanel' # FIXME find a better test
+
+		try:
+			GtkStack = Gtk.Stack
+		except AttributeError:
+			self._is_side_panel_stack = False
+		else:
+			self._is_side_panel_stack = isinstance(window.get_side_panel(), GtkStack) # since 3.12
 
 		connect_handlers(self, view, ('size-allocate',), 'tree_view', tabwin)
 
@@ -186,7 +192,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._tabwin = None
 		self._view = None
 		self._settings = None
-		self._is_pre_3_12 = None
+		self._is_side_panel_stack = None
 
 	def do_update_state(self):
 		pass
@@ -401,7 +407,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		doc = tab.get_document()
 		name = doc.get_short_name_for_display()
 		docname = Gedit.utils_str_middle_truncate(name, self.MAX_DOC_NAME_LENGTH)
-		tab_name_formats = self.TAB_NAME_GEDITPANEL_FORMATS if self._is_pre_3_12 else self.TAB_NAME_LISTBOX_FORMATS
+		tab_name_formats = self.TAB_NAME_LISTBOX_FORMATS if self._is_side_panel_stack else self.TAB_NAME_GEDITPANEL_FORMATS
 
 		if not doc.get_modified():
 			tab_name = escape(docname)
@@ -420,10 +426,10 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		return tab_name
 
 	def _get_tab_icon(self, tab):
-		if self._is_pre_3_12:
-			icon = self._get_stock_tab_icon(tab)
-		else:
+		if self._is_side_panel_stack:
 			icon = self._get_named_tab_icon(tab)
+		else:
+			icon = self._get_stock_tab_icon(tab)
 		return icon
 
 	# based on _gedit_tab_get_icon() in gedit-tab.c >= 3.12
