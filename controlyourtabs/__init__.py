@@ -21,7 +21,7 @@
 
 import gettext
 import os.path
-from gi.repository import GObject, Gtk, Gdk, GdkPixbuf, Gio, Gedit, PeasGtk
+from gi.repository import GObject, Gtk, Gdk, GdkPixbuf, Gio, GtkSource, Gedit, PeasGtk
 from xml.sax.saxutils import escape
 from .utils import connect_handlers, disconnect_handlers
 
@@ -405,7 +405,13 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		else:
 			tab_name = tab_name_formats['modified'] % escape(docname)
 
-		if doc.get_readonly():
+		try:
+			file = doc.get_file()
+			is_readonly = GtkSource.File.is_readonly(file)
+		except AttributeError:
+			is_readonly = doc.get_readonly() # deprecated since 3.18
+
+		if is_readonly:
 			tab_name += tab_name_formats['readonly'] % escape(_("Read-Only"))
 
 		return tab_name
