@@ -517,7 +517,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 				width = width * size / height
 				height = size
 
-			pixbuf = pixbuf.scale_simple(width, height, Gdk.INTERP_BILINEAR)
+			pixbuf = pixbuf.scale_simple(width, height, GdkPixbuf.InterpType.BILINEAR)
 
 		return pixbuf
 

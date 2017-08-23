@@ -4,6 +4,8 @@ TBD ():
 * Added translation support
 * Fixed minor error if the plugin is enabled, disabled then enabled
   again in the same gedit session, and a new tab group is added
+* Fixed minor error if a file icon needed to be resized in gedit 3.10 or
+  earlier
 * Ensure when the tab list popup appears it is scrolled to the top
 * Made compatible with gedit 3.0
 * Use python-gtk-utils for some plumbing
