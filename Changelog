@@ -2,6 +2,10 @@ TBD ():
 * Added a preference to change Ctrl-Tab to tabbar order, available
   in gedit 3.4 and later
 * Added translation support
+* Handle the case when tab switching has started (e.g. Ctrl is held down
+  after Tab is let go) and the user switches to different tabs using
+  other means (e.g. clicking on document tabs or documents in the
+  Documents panel)
 * Fixed minor error if the plugin is enabled, disabled then enabled
   again in the same gedit session, and a new tab group is added
 * Fixed minor error if a file icon needed to be resized in gedit 3.10 or

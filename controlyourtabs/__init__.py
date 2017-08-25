@@ -142,6 +142,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 		self._tabbing = False
 		self._paging = False
+		self._switching = False
 		self._ctrl_l = False
 		self._ctrl_r = False
 		self._multi = None
@@ -185,6 +186,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 		self._tabbing = None
 		self._paging = None
+		self._switching = None
 		self._ctrl_l = None
 		self._ctrl_r = None
 		self._multi = None
@@ -296,19 +298,23 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			self.on_multi_notebook_tab_added(multi, new_notebook, tab, notebooks)
 
 	def on_window_active_tab_changed(self, window, tab, notebooks):
-		if not self._tabbing and not self._paging:
+		if not self._switching:
 			stack, model = notebooks[tab.get_parent()]
-			if tab in stack:
-				model.remove(model.get_iter(stack.index(tab)))
-				stack.remove(tab)
-
 			self._view.set_model(model)
 
 			for row in model:
 				row[self.SELECTED_TAB_COLUMN] = False
 
-			stack.insert(0, tab)
-			model.insert(0, [self._get_tab_icon(tab), self._get_tab_name(tab), tab, True])
+			if not self._tabbing and not self._paging:
+				if tab in stack:
+					model.remove(model.get_iter(stack.index(tab)))
+					stack.remove(tab)
+
+				stack.insert(0, tab)
+				model.insert(0, [self._get_tab_icon(tab), self._get_tab_name(tab), tab, True])
+
+			else:
+				model[stack.index(tab)][self.SELECTED_TAB_COLUMN] = True
 
 	def on_sync_icon_and_name(self, tab, pspec, notebooks):
 		stack, model = notebooks[tab.get_parent()]
@@ -368,7 +374,9 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 				else:
 					self._paging = True
 
+				self._switching = True
 				window.set_active_tab(next)
+				self._switching = False
 
 		return True
 
@@ -391,6 +399,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		if self._tabbing or self._paging:
 			self._tabbing = False
 			self._paging = False
+			self._switching = False
 			self._ctrl_l = False
 			self._ctrl_r = False
 			self._tabwin.hide()
