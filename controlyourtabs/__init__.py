@@ -91,7 +91,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION: 'dialog-warning-symbolic'
 	}
 
-	SETTINGS_SCHEMA_ID = 'org.gnome.gedit.plugins.controlyourtabs'
+	SETTINGS_SCHEMA_ID = 'com.thingsthemselves.gedit.plugins.controlyourtabs'
 
 	USE_TABBAR_ORDER = 'use-tabbar-order'
 
