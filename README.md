@@ -21,17 +21,25 @@ gedit 2 is [v0.1.2][].
     *   For gedit 3.6 and earlier, copy `controlyourtabs.plugin.python2`
         and rename to `controlyourtabs.plugin`.
     *   For gedit 3.8 and later, copy `controlyourtabs.plugin`.
-3.  Restart gedit, select **Edit > Preferences** (or
-    **gedit > Preferences** on Mac), and enable the plugin in the
-    **Plugins** tab.
+3.  Restart gedit, then enable the plugin in the **Plugins** tab in
+    gedit's **Preferences** window.
 
 ## Usage ##
 
 *   <kbd>Ctrl</kbd>+<kbd>Tab</kbd> /
-    <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> switch tabs in most
-    recently used order.
+    <kbd>Ctrl</kbd>+<kbd>Shift</kbd >+<kbd>Tab</kbd> - Switch tabs in
+    most recently used order.
 *   <kbd>Ctrl</kbd>+<kbd>Page Up</kbd> /
-    <kbd>Ctrl</kbd>+<kbd>Page Down</kbd> switch tabs in tabbar order.
+    <kbd>Ctrl</kbd>+<kbd>Page Down</kbd> - Switch tabs in tabbar order.
+
+## Preferences ##
+
+In gedit 3.4 or later, the plugin supports these preferences:
+
+*   `Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab` - Change
+    <kbd>Ctrl</kbd>+<kbd>Tab</kbd> /
+    <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> to switch tabs in
+    tabbar order instead of most recently used order.
 
 ## Development ##
 
