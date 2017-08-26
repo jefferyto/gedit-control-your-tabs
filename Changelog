@@ -1,4 +1,4 @@
-TBD ():
+v0.3.0 ():
 * Added a preference to change Ctrl-Tab to tabbar order, available
   in gedit 3.4 and later
 * Added translation support
