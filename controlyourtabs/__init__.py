@@ -170,7 +170,9 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			connect_handlers(self, window, ('tab-added',), 'window')
 
 	def do_deactivate(self):
-		disconnect_handlers(self, self.window)
+		window = self.window
+
+		disconnect_handlers(self, window)
 		disconnect_handlers(self, self._view)
 
 		if self._multi:
@@ -179,6 +181,9 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		notebooks = self._notebooks
 		for notebook in notebooks:
 			disconnect_handlers(self, notebooks[notebook][1])
+
+		for doc in window.get_documents():
+			disconnect_handlers(self, Gedit.Tab.get_from_document(doc))
 
 		self._end_switching()
 

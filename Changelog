@@ -8,6 +8,9 @@ v0.3.0 ():
   Documents panel)
 * Fixed minor error if the plugin is enabled, disabled then enabled
   again in the same gedit session, and a new tab group is added
+* Fixed minor error if the plugin is enabled, disabled then enabled
+  again in the same gedit session, and a previously existing new
+  document tab is replaced by an opened file, in gedit 3.14 or later
 * Fixed minor error if a file icon needed to be resized in gedit 3.10 or
   earlier
 * Ensure when the tab list popup appears it is scrolled to the top
