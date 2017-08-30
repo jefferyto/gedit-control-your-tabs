@@ -1,6 +1,7 @@
 v0.3.0 ():
 * Added a preference to change Ctrl-Tab to tabbar order, available
   in gedit 3.4 and later
+* Made the tab window now sized and positioned more reliably
 * Added translation support
 * Handle the case when tab switching has started (e.g. Ctrl is held down
   after Tab is let go) and the user switches to different tabs using
