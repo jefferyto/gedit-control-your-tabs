@@ -95,6 +95,9 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 	USE_TABBAR_ORDER = 'use-tabbar-order'
 
+
+	# gedit plugin api
+
 	def __init__(self):
 		GObject.Object.__init__(self)
 
@@ -204,18 +207,30 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 	def do_update_state(self):
 		pass
 
+
+	# settings ui
+
 	def do_create_configure_widget(self):
 		settings = self._get_settings()
 		if settings:
 			widget = Gtk.CheckButton(_("Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab"))
 			widget.set_active(settings.get_boolean(self.USE_TABBAR_ORDER))
-			connect_handlers(self, widget, ('toggled',), 'check_button', settings)
-			connect_handlers(self, settings, ('changed::' + self.USE_TABBAR_ORDER,), 'settings', widget)
+			connect_handlers(self, widget, ('toggled',), 'configure_check_button', settings)
+			connect_handlers(self, settings, ('changed::' + self.USE_TABBAR_ORDER,), 'configure_settings', widget)
 		else:
 			widget = Gtk.Box()
 			widget.add(Gtk.Label(_("Sorry, no preferences are available for this version of gedit.")))
 		widget.set_border_width(5)
 		return widget
+
+	def on_configure_check_button_toggled(self, widget, settings):
+		settings.set_boolean(self.USE_TABBAR_ORDER, widget.get_active())
+
+	def on_configure_settings_changed_use_tabbar_order(self, settings, prop, widget):
+		widget.set_active(settings.get_boolean(self.USE_TABBAR_ORDER))
+
+
+	# plugin setup
 
 	def on_tree_view_size_allocate(self, view, allocation, tabwin):
 		min_size, nat_size = view.get_preferred_size()
@@ -243,6 +258,9 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 				Gedit.debug_plugin_message("cannot find multi notebook from %s", tab)
 			except AttributeError:
 				pass
+
+
+	# signal handlers / main logic
 
 	def on_multi_notebook_notebook_added(self, multi, notebook, notebooks):
 		if notebook not in notebooks:
@@ -414,6 +432,9 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			if tab:
 				self.on_window_active_tab_changed(window, tab, self._notebooks)
 
+
+	# tab name / icon
+
 	# based on
 	# <  3.12: tab_get_name() in gedit-documents-panel.c
 	# >= 3.12: doc_get_name() and document_row_sync_tab_name_and_icon() in gedit-documents-panel.c
@@ -535,6 +556,9 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 		return pixbuf
 
+
+	# misc
+
 	# this is a /hack/
 	def _get_multi_notebook(self, tab):
 		multi = tab.get_parent()
@@ -547,15 +571,10 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 	def _get_settings(self):
 		schemas_path = os.path.join(BASE_PATH, 'schemas')
 		try:
+			# available in gedit >= 3.4
 			schema_source = Gio.SettingsSchemaSource.new_from_directory(schemas_path, Gio.SettingsSchemaSource.get_default(), False)
 			schema = Gio.SettingsSchemaSource.lookup(schema_source, self.SETTINGS_SCHEMA_ID, False)
 			settings = Gio.Settings.new_full(schema, None, None) if schema else None
 		except AttributeError:
 			settings = None
 		return settings
-
-	def on_check_button_toggled(self, widget, settings):
-		settings.set_boolean(self.USE_TABBAR_ORDER, widget.get_active())
-
-	def on_settings_changed_use_tabbar_order(self, settings, prop, widget):
-		widget.set_active(settings.get_boolean(self.USE_TABBAR_ORDER))
