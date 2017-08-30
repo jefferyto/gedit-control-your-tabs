@@ -20,6 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import gettext
+import math
 import os.path
 from gi.repository import GObject, Gtk, Gdk, GdkPixbuf, Gio, GtkSource, Gedit, PeasGtk
 from xml.sax.saxutils import escape
@@ -47,7 +48,9 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 	             'Alt_L', 'Alt_R')
 	             # Compose, Apple?
 
-	MAX_TAB_WINDOW_HEIGHT = 250
+	MAX_TAB_WINDOW_ROWS = 9
+
+	MAX_TAB_WINDOW_HEIGHT_PERCENTAGE = 0.5
 
 	# based on MAX_DOC_NAME_LENGTH in gedit-documents-panel.c
 	MAX_DOC_NAME_LENGTH = 60
@@ -268,7 +271,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 				self.on_multi_notebook_notebook_added(multi, Gedit.Tab.get_from_document(doc).get_parent(), notebooks, view)
 
 			connect_handlers(self, multi, ('notebook-added', 'notebook-removed', 'tab-added', 'tab-removed'), 'multi_notebook', notebooks, view)
-			connect_handlers(self, window, ('tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event'), 'window', notebooks, view)
+			connect_handlers(self, window, ('tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event', 'configure-event'), 'window', notebooks, view)
 
 		else:
 			try:
@@ -423,6 +426,9 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 	def on_window_focus_out_event(self, window, event, notebooks, view):
 		self._end_switching()
+
+	def on_window_configure_event(self, window, event, notebooks, view):
+		self._schedule_tabwin_resize()
 
 	def _end_switching(self):
 		if self._tabbing or self._paging:
@@ -602,18 +608,28 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			self._tabwin_resize_id = None
 
 	def _do_tabwin_resize(self):
+		view = self._view
 		sw = self._sw
 
-		view_min_size, view_nat_size = self._view.get_preferred_size()
+		view_min_size, view_nat_size = view.get_preferred_size()
 		view_width = max(view_min_size.width, view_nat_size.width)
 		view_height = max(view_min_size.height, view_nat_size.height)
+
+		num_rows = len(view.get_model())
+		row_height = math.ceil(view_height / num_rows)
+		max_rows_height = self.MAX_TAB_WINDOW_ROWS * row_height
+
+		win_width, win_height = self.window.get_size()
+		max_win_height = round(self.MAX_TAB_WINDOW_HEIGHT_PERCENTAGE * win_height)
+
+		max_height = min(max_rows_height, max_win_height)
 
 		try:
 			is_overlay_scrolling = sw.get_overlay_scrolling()
 		except AttributeError:
 			is_overlay_scrolling = False
 
-		if not is_overlay_scrolling and view_height > self.MAX_TAB_WINDOW_HEIGHT:
+		if not is_overlay_scrolling and view_height > max_height:
 			vscrollbar = sw.get_vscrollbar()
 			scroll_min_size, scroll_nat_size = vscrollbar.get_preferred_size()
 			scroll_width = max(scroll_min_size.width, scroll_nat_size.width)
@@ -621,7 +637,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			scroll_width = 0
 
 		tabwin_width = view_width + scroll_width
-		tabwin_height = min(view_height, self.MAX_TAB_WINDOW_HEIGHT)
+		tabwin_height = min(view_height, max_height)
 
 		self._tabwin.set_size_request(tabwin_width, tabwin_height)
 
