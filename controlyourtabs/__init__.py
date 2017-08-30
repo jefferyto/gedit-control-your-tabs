@@ -131,17 +131,29 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 		col = Gtk.TreeViewColumn(_("Documents"))
 		col.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-		cell = Gtk.CellRendererPixbuf()
-		col.pack_start(cell, False)
-		col.add_attribute(cell, 'pixbuf', 0)
-		cell = Gtk.CellRendererText()
-		col.pack_start(cell, True)
-		col.add_attribute(cell, 'markup', 1)
+
+		icon_cell = Gtk.CellRendererPixbuf()
+		name_cell = Gtk.CellRendererText()
+		space_cell = Gtk.CellRendererPixbuf()
+
+		col.pack_start(icon_cell, False)
+		col.pack_start(name_cell, True)
+		col.pack_start(space_cell, False)
+
+		col.add_attribute(icon_cell, 'pixbuf', 0)
+		col.add_attribute(name_cell, 'markup', 1)
 
 		view.append_column(col)
 
 		sel = view.get_selection()
 		sel.set_mode(Gtk.SelectionMode.SINGLE)
+
+		try:
+			GtkStack = Gtk.Stack
+		except AttributeError:
+			is_side_panel_stack = False
+		else:
+			is_side_panel_stack = isinstance(window.get_side_panel(), GtkStack) # since 3.12
 
 		self._tabbing = False
 		self._paging = False
@@ -152,14 +164,10 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._notebooks = notebooks
 		self._tabwin = tabwin
 		self._view = view
+		self._icon_cell = icon_cell
+		self._space_cell = space_cell
 		self._settings = self._get_settings()
-
-		try:
-			GtkStack = Gtk.Stack
-		except AttributeError:
-			self._is_side_panel_stack = False
-		else:
-			self._is_side_panel_stack = isinstance(window.get_side_panel(), GtkStack) # since 3.12
+		self._is_side_panel_stack = is_side_panel_stack
 
 		connect_handlers(self, view, ('size-allocate',), 'tree_view', tabwin)
 
@@ -201,6 +209,8 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._notebooks = None
 		self._tabwin = None
 		self._view = None
+		self._icon_cell = None
+		self._space_cell = None
 		self._settings = None
 		self._is_side_panel_stack = None
 
@@ -243,6 +253,14 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 	def _setup(self, tab):
 		notebooks = self._notebooks
 		multi = self._get_multi_notebook(tab)
+
+		if self._is_side_panel_stack:
+			is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup(Gtk.IconSize.MENU)
+		else:
+			is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup_for_settings(tab.get_settings(), Gtk.IconSize.MENU)
+
+		self._icon_cell.set_fixed_size(icon_size_height, icon_size_height)
+		self._space_cell.set_fixed_size(icon_size_height, icon_size_height)
 
 		if multi:
 			self._multi = multi
