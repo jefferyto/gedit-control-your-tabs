@@ -623,12 +623,16 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 		max_height = min(max_rows_height, max_win_height)
 
-		try:
-			is_overlay_scrolling = sw.get_overlay_scrolling()
-		except AttributeError:
-			is_overlay_scrolling = False
+		# we can't reliably tell if overlay scrolling is being used
+		# since gtk_scrolled_window_get_overlay_scrolling() can still return True if GTK_OVERLAY_SCROLLING=0 is set
+		# and even if we can tell if overlay scrolling is disabled,
+		# we cannot tell if the scrolled window has reserved enough space for the scrollbar
+		#   fedora < 25: reserved
+		#   fedora >= 25: not reserved
+		#   ubuntu 17.04: reserved
+		# so let's ignore overlay scrolling for now :-(
 
-		vscrollbar_policy = Gtk.PolicyType.AUTOMATIC if is_overlay_scrolling or view_height > max_height else Gtk.PolicyType.NEVER
+		vscrollbar_policy = Gtk.PolicyType.AUTOMATIC if view_height > max_height else Gtk.PolicyType.NEVER
 		sw.set_policy(Gtk.PolicyType.NEVER, vscrollbar_policy)
 
 		sw_min_size, sw_nat_size = sw.get_preferred_size()
