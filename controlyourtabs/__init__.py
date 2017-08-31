@@ -612,7 +612,6 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		sw = self._sw
 
 		view_min_size, view_nat_size = view.get_preferred_size()
-		view_width = max(view_min_size.width, view_nat_size.width)
 		view_height = max(view_min_size.height, view_nat_size.height)
 
 		num_rows = len(view.get_model())
@@ -629,14 +628,12 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		except AttributeError:
 			is_overlay_scrolling = False
 
-		if not is_overlay_scrolling and view_height > max_height:
-			vscrollbar = sw.get_vscrollbar()
-			scroll_min_size, scroll_nat_size = vscrollbar.get_preferred_size()
-			scroll_width = max(scroll_min_size.width, scroll_nat_size.width)
-		else:
-			scroll_width = 0
+		vscrollbar_policy = Gtk.PolicyType.AUTOMATIC if is_overlay_scrolling or view_height > max_height else Gtk.PolicyType.NEVER
+		sw.set_policy(Gtk.PolicyType.NEVER, vscrollbar_policy)
 
-		tabwin_width = view_width + scroll_width
+		sw_min_size, sw_nat_size = sw.get_preferred_size()
+
+		tabwin_width = max(sw_min_size.width, sw_nat_size.width)
 		tabwin_height = min(view_height, max_height)
 
 		self._tabwin.set_size_request(tabwin_width, tabwin_height)
