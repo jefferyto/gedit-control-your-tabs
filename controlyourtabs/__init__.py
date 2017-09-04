@@ -20,6 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import gettext
+import math
 import os.path
 from gi.repository import GObject, Gtk, Gdk, GdkPixbuf, Gio, GtkSource, Gedit, PeasGtk
 from xml.sax.saxutils import escape
@@ -47,7 +48,9 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 	             'Alt_L', 'Alt_R')
 	             # Compose, Apple?
 
-	MAX_TAB_WINDOW_HEIGHT = 250
+	MAX_TAB_WINDOW_ROWS = 9
+
+	MAX_TAB_WINDOW_HEIGHT_PERCENTAGE = 0.5
 
 	# based on MAX_DOC_NAME_LENGTH in gedit-documents-panel.c
 	MAX_DOC_NAME_LENGTH = 60
@@ -131,17 +134,32 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 		col = Gtk.TreeViewColumn(_("Documents"))
 		col.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-		cell = Gtk.CellRendererPixbuf()
-		col.pack_start(cell, False)
-		col.add_attribute(cell, 'pixbuf', 0)
-		cell = Gtk.CellRendererText()
-		col.pack_start(cell, True)
-		col.add_attribute(cell, 'markup', 1)
+
+		icon_cell = Gtk.CellRendererPixbuf()
+		name_cell = Gtk.CellRendererText()
+		space_cell = Gtk.CellRendererPixbuf()
+
+		col.pack_start(icon_cell, False)
+		col.pack_start(name_cell, True)
+		col.pack_start(space_cell, False)
+
+		col.add_attribute(icon_cell, 'pixbuf', 0)
+		col.add_attribute(name_cell, 'markup', 1)
 
 		view.append_column(col)
 
 		sel = view.get_selection()
 		sel.set_mode(Gtk.SelectionMode.SINGLE)
+
+		# hack to ensure tabwin is correctly positioned/sized on first show
+		view.realize()
+
+		try:
+			GtkStack = Gtk.Stack
+		except AttributeError:
+			is_side_panel_stack = False
+		else:
+			is_side_panel_stack = isinstance(window.get_side_panel(), GtkStack) # since 3.12
 
 		self._tabbing = False
 		self._paging = False
@@ -152,31 +170,25 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._notebooks = notebooks
 		self._tabwin = tabwin
 		self._view = view
+		self._sw = sw
+		self._icon_cell = icon_cell
+		self._space_cell = space_cell
+		self._tabwin_resize_id = None
 		self._settings = self._get_settings()
-
-		try:
-			GtkStack = Gtk.Stack
-		except AttributeError:
-			self._is_side_panel_stack = False
-		else:
-			self._is_side_panel_stack = isinstance(window.get_side_panel(), GtkStack) # since 3.12
-
-		connect_handlers(self, view, ('size-allocate',), 'tree_view', tabwin)
+		self._is_side_panel_stack = is_side_panel_stack
 
 		tab = window.get_active_tab()
 		if tab:
-			self._setup(tab)
+			self._setup(window, tab, notebooks, view)
 			if self._multi:
-				self.on_window_active_tab_changed(window, tab, notebooks)
-
-		if not self._multi:
+				self.on_window_active_tab_changed(window, tab, notebooks, view)
+		else:
 			connect_handlers(self, window, ('tab-added',), 'window')
 
 	def do_deactivate(self):
 		window = self.window
 
 		disconnect_handlers(self, window)
-		disconnect_handlers(self, self._view)
 
 		if self._multi:
 			disconnect_handlers(self, self._multi)
@@ -188,6 +200,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		for doc in window.get_documents():
 			disconnect_handlers(self, Gedit.Tab.get_from_document(doc))
 
+		self._cancel_tabwin_resize()
 		self._end_switching()
 
 		self._tabwin.destroy()
@@ -201,6 +214,10 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._notebooks = None
 		self._tabwin = None
 		self._view = None
+		self._sw = None
+		self._icon_cell = None
+		self._space_cell = None
+		self._tabwin_resize_id = None
 		self._settings = None
 		self._is_side_panel_stack = None
 
@@ -232,26 +249,29 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 	# plugin setup
 
-	def on_tree_view_size_allocate(self, view, allocation, tabwin):
-		min_size, nat_size = view.get_preferred_size()
-		tabwin.set_size_request(-1, min(nat_size.height, self.MAX_TAB_WINDOW_HEIGHT))
-
 	def on_window_tab_added(self, window, tab):
 		disconnect_handlers(self, window)
-		self._setup(tab)
+		self._setup(window, tab, self._notebooks, self._view)
 
-	def _setup(self, tab):
-		notebooks = self._notebooks
+	def _setup(self, window, tab, notebooks, view):
+		if self._is_side_panel_stack:
+			is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup(Gtk.IconSize.MENU)
+		else:
+			is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup_for_settings(tab.get_settings(), Gtk.IconSize.MENU)
+
+		self._icon_cell.set_fixed_size(icon_size_height, icon_size_height)
+		self._space_cell.set_fixed_size(icon_size_height, icon_size_height)
+
 		multi = self._get_multi_notebook(tab)
 
 		if multi:
 			self._multi = multi
 
-			for doc in self.window.get_documents():
-				self.on_multi_notebook_notebook_added(multi, Gedit.Tab.get_from_document(doc).get_parent(), notebooks)
+			for doc in window.get_documents():
+				self.on_multi_notebook_notebook_added(multi, Gedit.Tab.get_from_document(doc).get_parent(), notebooks, view)
 
-			connect_handlers(self, multi, ('notebook-added', 'notebook-removed', 'tab-added', 'tab-removed'), 'multi_notebook', notebooks)
-			connect_handlers(self, self.window, ('tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event'), 'window', notebooks)
+			connect_handlers(self, multi, ('notebook-added', 'notebook-removed', 'tab-added', 'tab-removed'), 'multi_notebook', notebooks, view)
+			connect_handlers(self, window, ('tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event', 'configure-event'), 'window', notebooks, view)
 
 		else:
 			try:
@@ -262,51 +282,41 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 	# signal handlers / main logic
 
-	def on_multi_notebook_notebook_added(self, multi, notebook, notebooks):
+	def on_multi_notebook_notebook_added(self, multi, notebook, notebooks, view):
 		if notebook not in notebooks:
 			model = Gtk.ListStore(GdkPixbuf.Pixbuf, str, Gedit.Tab, 'gboolean')
-			view = self._view
-			connect_handlers(self, model, ('row-changed',), 'model', view, view.get_selection())
+			connect_handlers(self, model, ('row-inserted', 'row-deleted', 'row-changed'), 'model', view, view.get_selection())
 			notebooks[notebook] = [[], model]
 
 			for tab in notebook.get_children():
-				self.on_multi_notebook_tab_added(multi, notebook, tab, notebooks)
+				self.on_multi_notebook_tab_added(multi, notebook, tab, notebooks, view)
 
-	def on_multi_notebook_notebook_removed(self, multi, notebook, notebooks):
+	def on_multi_notebook_notebook_removed(self, multi, notebook, notebooks, view):
 		if notebook in notebooks:
 			for tab in notebook.get_children():
-				self.on_multi_notebook_tab_removed(multi, notebook, tab, notebooks)
+				self.on_multi_notebook_tab_removed(multi, notebook, tab, notebooks, view)
 
 			stack, model = notebooks[notebook]
-			view = self._view
 			if view.get_model() == model:
 				view.set_model(None)
 			disconnect_handlers(self, model)
 			del notebooks[notebook]
 
-	def on_multi_notebook_tab_added(self, multi, notebook, tab, notebooks):
+	def on_multi_notebook_tab_added(self, multi, notebook, tab, notebooks, view):
 		stack, model = notebooks[notebook]
 		if tab not in stack:
 			stack.append(tab)
 			model.append([self._get_tab_icon(tab), self._get_tab_name(tab), tab, False])
 			connect_handlers(self, tab, ('notify::name', 'notify::state'), self.on_sync_icon_and_name, notebooks)
 
-	def on_multi_notebook_tab_removed(self, multi, notebook, tab, notebooks):
+	def on_multi_notebook_tab_removed(self, multi, notebook, tab, notebooks, view):
 		stack, model = notebooks[notebook]
 		if tab in stack:
 			disconnect_handlers(self, tab)
 			model.remove(model.get_iter(stack.index(tab)))
 			stack.remove(tab)
 
-	def on_model_row_changed(self, model, path, iter, view, sel):
-		if view.get_model() == model:
-			if model[path][self.SELECTED_TAB_COLUMN]:
-				sel.select_path(path)
-				view.scroll_to_cell(path, None, True, 0.5, 0)
-			else:
-				sel.unselect_path(path)
-
-	def on_window_tabs_reordered(self, window, notebooks):
+	def on_window_tabs_reordered(self, window, notebooks, view):
 		multi = self._multi
 		tab = window.get_active_tab()
 		new_notebook = tab.get_parent()
@@ -317,36 +327,34 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 					old_notebook = notebook
 					break
 			if old_notebook:
-				self.on_multi_notebook_tab_removed(multi, old_notebook, tab, notebooks)
-			self.on_multi_notebook_tab_added(multi, new_notebook, tab, notebooks)
+				self.on_multi_notebook_tab_removed(multi, old_notebook, tab, notebooks, view)
+			self.on_multi_notebook_tab_added(multi, new_notebook, tab, notebooks, view)
 
-	def on_window_active_tab_changed(self, window, tab, notebooks):
+	def on_window_active_tab_changed(self, window, tab, notebooks, view):
 		if not self._switching:
 			stack, model = notebooks[tab.get_parent()]
-			self._view.set_model(model)
+
+			if view.get_model() != model:
+				view.set_model(model)
+				self._schedule_tabwin_resize()
 
 			for row in model:
 				row[self.SELECTED_TAB_COLUMN] = False
 
 			if not self._tabbing and not self._paging:
 				if tab in stack:
-					model.remove(model.get_iter(stack.index(tab)))
+					model.move_after(model.get_iter(stack.index(tab)), None)
 					stack.remove(tab)
+				else:
+					model.insert(0, [self._get_tab_icon(tab), self._get_tab_name(tab), tab, False])
 
 				stack.insert(0, tab)
-				model.insert(0, [self._get_tab_icon(tab), self._get_tab_name(tab), tab, True])
+				model[0][self.SELECTED_TAB_COLUMN] = True
 
 			else:
 				model[stack.index(tab)][self.SELECTED_TAB_COLUMN] = True
 
-	def on_sync_icon_and_name(self, tab, pspec, notebooks):
-		stack, model = notebooks[tab.get_parent()]
-		if tab in stack:
-			path = stack.index(tab)
-			model[path][0] = self._get_tab_icon(tab)
-			model[path][1] = self._get_tab_name(tab)
-
-	def on_window_key_press_event(self, window, event, notebooks):
+	def on_window_key_press_event(self, window, event, notebooks, view):
 		key = Gdk.keyval_name(event.keyval)
 		state = event.state & Gtk.accelerator_get_default_mod_mask()
 
@@ -371,9 +379,10 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 		cur = window.get_active_tab()
 		if cur:
+			settings = self._settings
 			notebook = cur.get_parent()
 			stack, model = notebooks[notebook]
-			is_tabbing = is_tab_key and not (self._settings and self._settings.get_boolean(self.USE_TABBAR_ORDER))
+			is_tabbing = is_tab_key and not (settings and settings.get_boolean(self.USE_TABBAR_ORDER))
 			tabs = stack if is_tabbing else notebook.get_children()
 			tlen = len(tabs)
 
@@ -388,7 +397,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 					tabwin = self._tabwin
 
 					if not self._tabbing:
-						self._view.scroll_to_cell(Gtk.TreePath.new_first(), None, True, 0, 0)
+						view.scroll_to_cell(Gtk.TreePath.new_first(), None, True, 0, 0)
 						tabwin.show_all()
 					else:
 						tabwin.present_with_time(event.time)
@@ -403,7 +412,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 		return True
 
-	def on_window_key_release_event(self, window, event, notebooks):
+	def on_window_key_release_event(self, window, event, notebooks, view):
 		key = Gdk.keyval_name(event.keyval)
 
 		if key == 'Control_L':
@@ -415,8 +424,11 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		if not self._ctrl_l and not self._ctrl_r:
 			self._end_switching()
 
-	def on_window_focus_out_event(self, window, event, notebooks):
+	def on_window_focus_out_event(self, window, event, notebooks, view):
 		self._end_switching()
+
+	def on_window_configure_event(self, window, event, notebooks, view):
+		self._schedule_tabwin_resize()
 
 	def _end_switching(self):
 		if self._tabbing or self._paging:
@@ -430,7 +442,31 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			window = self.window
 			tab = window.get_active_tab()
 			if tab:
-				self.on_window_active_tab_changed(window, tab, self._notebooks)
+				self.on_window_active_tab_changed(window, tab, self._notebooks, self._view)
+
+	def on_model_row_inserted(self, model, path, iter, view, sel):
+		if view.get_model() == model:
+			self._schedule_tabwin_resize()
+
+	def on_model_row_deleted(self, model, path, view, sel):
+		if view.get_model() == model:
+			self._schedule_tabwin_resize()
+
+	def on_model_row_changed(self, model, path, iter, view, sel):
+		if view.get_model() == model:
+			if model[path][self.SELECTED_TAB_COLUMN]:
+				sel.select_path(path)
+				view.scroll_to_cell(path, None, True, 0.5, 0)
+			else:
+				sel.unselect_path(path)
+			self._schedule_tabwin_resize()
+
+	def on_sync_icon_and_name(self, tab, pspec, notebooks):
+		stack, model = notebooks[tab.get_parent()]
+		if tab in stack:
+			path = stack.index(tab)
+			model[path][0] = self._get_tab_icon(tab)
+			model[path][1] = self._get_tab_name(tab)
 
 
 	# tab name / icon
@@ -555,6 +591,58 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			pixbuf = pixbuf.scale_simple(width, height, GdkPixbuf.InterpType.BILINEAR)
 
 		return pixbuf
+
+
+	# tab window resizing
+
+	def _schedule_tabwin_resize(self):
+		if not self._tabwin_resize_id:
+			# need to wait a little before asking the treeview for its preferred size
+			# maybe because treeview rendering is async?
+			# this feels like a giant hack
+			self._tabwin_resize_id = GObject.idle_add(self._do_tabwin_resize)
+
+	def _cancel_tabwin_resize(self):
+		if self._tabwin_resize_id:
+			GObject.source_remove(self._tabwin_resize_id)
+			self._tabwin_resize_id = None
+
+	def _do_tabwin_resize(self):
+		view = self._view
+		sw = self._sw
+
+		view_min_size, view_nat_size = view.get_preferred_size()
+		view_height = max(view_min_size.height, view_nat_size.height)
+
+		num_rows = len(view.get_model())
+		row_height = math.ceil(view_height / num_rows)
+		max_rows_height = self.MAX_TAB_WINDOW_ROWS * row_height
+
+		win_width, win_height = self.window.get_size()
+		max_win_height = round(self.MAX_TAB_WINDOW_HEIGHT_PERCENTAGE * win_height)
+
+		max_height = min(max_rows_height, max_win_height)
+
+		# we can't reliably tell if overlay scrolling is being used
+		# since gtk_scrolled_window_get_overlay_scrolling() can still return True if GTK_OVERLAY_SCROLLING=0 is set
+		# and even if we can tell if overlay scrolling is disabled,
+		# we cannot tell if the scrolled window has reserved enough space for the scrollbar
+		#   fedora < 25: reserved
+		#   fedora >= 25: not reserved
+		#   ubuntu 17.04: reserved
+		# so let's ignore overlay scrolling for now :-(
+
+		vscrollbar_policy = Gtk.PolicyType.AUTOMATIC if view_height > max_height else Gtk.PolicyType.NEVER
+		sw.set_policy(Gtk.PolicyType.NEVER, vscrollbar_policy)
+
+		sw_min_size, sw_nat_size = sw.get_preferred_size()
+
+		tabwin_width = max(sw_min_size.width, sw_nat_size.width)
+		tabwin_height = min(view_height, max_height)
+
+		self._tabwin.set_size_request(tabwin_width, tabwin_height)
+
+		self._tabwin_resize_id = None
 
 
 	# misc
