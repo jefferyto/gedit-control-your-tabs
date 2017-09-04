@@ -15,7 +15,7 @@ v0.3.0 (2017-09-04):
   again in the same gedit session, and a previously existing new
   document tab is replaced by an opened file, in gedit 3.14 or later
 * Fixed minor error if a file icon needed to be resized in gedit 3.10 or
-  earlier
+  earlier (originally fixed by nuclearmistake in #8)
 * Ensure when the tab list popup appears it is scrolled to the top
 * Made compatible with gedit 3.0
 * Use python-gtk-utils for some plumbing
