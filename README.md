@@ -1,4 +1,4 @@
-# Control Your Tabs, a plugin for gedit #
+# Control Your Tabs, a plugin for gedit
 
 Switch between document tabs using Ctrl+Tab / Ctrl+Shift+Tab and
 Ctrl+PageUp / Ctrl+PageDown  
@@ -8,12 +8,12 @@ v0.3.0
 All bug reports, feature requests and miscellaneous comments are welcome
 at the [project issue tracker][].
 
-## Requirements ##
+## Requirements
 
 v0.2.0 and higher requires gedit 3. The last version compatible with
 gedit 2 is [v0.1.2][].
 
-## Installation ##
+## Installation
 
 1.  Download the source code (as [zip][] or [tar.gz][]) and extract.
 2.  Copy the `controlyourtabs` folder and the appropriate `.plugin` file
@@ -24,7 +24,7 @@ gedit 2 is [v0.1.2][].
 3.  Restart gedit, then enable the plugin in the **Plugins** tab in
     gedit's **Preferences** window.
 
-## Usage ##
+## Usage
 
 *   <kbd>Ctrl</kbd>+<kbd>Tab</kbd> /
     <kbd>Ctrl</kbd>+<kbd>Shift</kbd >+<kbd>Tab</kbd> - Switch tabs in
@@ -32,7 +32,7 @@ gedit 2 is [v0.1.2][].
 *   <kbd>Ctrl</kbd>+<kbd>Page Up</kbd> /
     <kbd>Ctrl</kbd>+<kbd>Page Down</kbd> - Switch tabs in tabbar order.
 
-## Preferences ##
+## Preferences
 
 In gedit 3.4 or later, the plugin supports these preferences:
 
@@ -41,13 +41,13 @@ In gedit 3.4 or later, the plugin supports these preferences:
     <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> to switch tabs in
     tabbar order instead of most recently used order.
 
-## Development ##
+## Development
 
 The code in `controlyourtabs/utils` comes from [python-gtk-utils][];
 changes should ideally be contributed to that project, then pulled back
 into this one with `git subtree pull`.
 
-## Credits ##
+## Credits
 
 Inspired by:
 
@@ -55,7 +55,7 @@ Inspired by:
 *   [TabPgUpPgDown][] by Eran M.
 *   the gedit Documents panel
 
-## License ##
+## License
 
 Copyright &copy; 2010-2014, 2016-2017 Jeffery To <jeffery.to@gmail.com>
 
