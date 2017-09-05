@@ -19,6 +19,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gedit', '3.0')
+
 import gettext
 import math
 import os.path
@@ -30,8 +34,12 @@ GETTEXT_PACKAGE = 'gedit-control-your-tabs'
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 LOCALE_PATH = os.path.join(BASE_PATH, 'locale')
 
-gettext.bindtextdomain(GETTEXT_PACKAGE, LOCALE_PATH)
-_ = lambda s: gettext.dgettext(GETTEXT_PACKAGE, s);
+try:
+	gettext.bindtextdomain(GETTEXT_PACKAGE, LOCALE_PATH)
+	_ = lambda s: gettext.dgettext(GETTEXT_PACKAGE, s);
+except:
+	_ = lambda s: s
+
 
 class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Configurable):
 	__gtype_name__ = 'ControlYourTabsPlugin'
