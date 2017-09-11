@@ -622,7 +622,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		view_min_size, view_nat_size = view.get_preferred_size()
 		view_height = max(view_min_size.height, view_nat_size.height)
 
-		num_rows = len(view.get_model())
+		num_rows = max(len(view.get_model()), 2)
 		row_height = math.ceil(view_height / num_rows)
 		max_rows_height = self.MAX_TAB_WINDOW_ROWS * row_height
 

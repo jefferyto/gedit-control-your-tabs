@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+* Fixed division by zero error
 
 ## v0.3.0 (2017-09-04)
 * Added a preference to change Ctrl-Tab to tabbar order, available
