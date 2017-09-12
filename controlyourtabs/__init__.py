@@ -673,4 +673,10 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			settings = Gio.Settings.new_full(schema, None, None) if schema else None
 		except AttributeError:
 			settings = None
+		except:
+			try:
+				Gedit.debug_plugin_message("could not load settings schema from %s", schemas_path)
+			except AttributeError:
+				pass
+			settings = None
 		return settings
