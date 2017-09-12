@@ -651,6 +651,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._tabwin.set_size_request(tabwin_width, tabwin_height)
 
 		self._tabwin_resize_id = None
+		return False
 
 
 	# misc
