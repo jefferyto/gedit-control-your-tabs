@@ -27,7 +27,7 @@ gedit 2 is [v0.1.2][].
 ## Usage
 
 *   <kbd>Ctrl</kbd>+<kbd>Tab</kbd> /
-    <kbd>Ctrl</kbd>+<kbd>Shift</kbd >+<kbd>Tab</kbd> - Switch tabs in
+    <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> - Switch tabs in
     most recently used order.
 *   <kbd>Ctrl</kbd>+<kbd>Page Up</kbd> /
     <kbd>Ctrl</kbd>+<kbd>Page Down</kbd> - Switch tabs in tabbar order.
