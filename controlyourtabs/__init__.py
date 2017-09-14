@@ -305,7 +305,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 				self.on_multi_notebook_tab_removed(multi, notebook, tab, notebooks, view)
 
 			stack, model = notebooks[notebook]
-			if view.get_model() == model:
+			if view.get_model() is model:
 				view.set_model(None)
 			disconnect_handlers(self, model)
 			del notebooks[notebook]
@@ -342,7 +342,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		if not self._switching:
 			stack, model = notebooks[tab.get_parent()]
 
-			if view.get_model() != model:
+			if view.get_model() is not model:
 				view.set_model(model)
 				self._schedule_tabwin_resize()
 
@@ -453,15 +453,15 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 				self.on_window_active_tab_changed(window, tab, self._notebooks, self._view)
 
 	def on_model_row_inserted(self, model, path, iter, view, sel):
-		if view.get_model() == model:
+		if view.get_model() is model:
 			self._schedule_tabwin_resize()
 
 	def on_model_row_deleted(self, model, path, view, sel):
-		if view.get_model() == model:
+		if view.get_model() is model:
 			self._schedule_tabwin_resize()
 
 	def on_model_row_changed(self, model, path, iter, view, sel):
-		if view.get_model() == model:
+		if view.get_model() is model:
 			if model[path][self.SELECTED_TAB_COLUMN]:
 				sel.select_path(path)
 				view.scroll_to_cell(path, None, True, 0.5, 0)
