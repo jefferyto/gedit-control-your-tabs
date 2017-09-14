@@ -48,12 +48,12 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 	SELECTED_TAB_COLUMN = 3
 
-	META_KEYS = ('Shift_L', 'Shift_R',
+	META_KEYS = ['Shift_L', 'Shift_R',
 	             'Control_L', 'Control_R',
 	             'Meta_L', 'Meta_R',
 	             'Super_L', 'Super_R',
 	             'Hyper_L', 'Hyper_R',
-	             'Alt_L', 'Alt_R')
+	             'Alt_L', 'Alt_R']
 	             # Compose, Apple?
 
 	MAX_TAB_WINDOW_ROWS = 9
@@ -191,7 +191,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			if self._multi:
 				self.on_window_active_tab_changed(window, tab, notebooks, view)
 		else:
-			connect_handlers(self, window, ('tab-added',), 'window')
+			connect_handlers(self, window, ['tab-added'], 'window')
 
 	def do_deactivate(self):
 		window = self.window
@@ -240,8 +240,8 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		if settings:
 			widget = Gtk.CheckButton(_("Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab"))
 			widget.set_active(settings.get_boolean(self.USE_TABBAR_ORDER))
-			connect_handlers(self, widget, ('toggled',), 'configure_check_button', settings)
-			connect_handlers(self, settings, ('changed::' + self.USE_TABBAR_ORDER,), 'configure_settings', widget)
+			connect_handlers(self, widget, ['toggled'], 'configure_check_button', settings)
+			connect_handlers(self, settings, ['changed::' + self.USE_TABBAR_ORDER], 'configure_settings', widget)
 		else:
 			widget = Gtk.Box()
 			widget.add(Gtk.Label(_("Sorry, no preferences are available for this version of gedit.")))
@@ -278,8 +278,8 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			for doc in window.get_documents():
 				self.on_multi_notebook_notebook_added(multi, Gedit.Tab.get_from_document(doc).get_parent(), notebooks, view)
 
-			connect_handlers(self, multi, ('notebook-added', 'notebook-removed', 'tab-added', 'tab-removed'), 'multi_notebook', notebooks, view)
-			connect_handlers(self, window, ('tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event', 'configure-event'), 'window', notebooks, view)
+			connect_handlers(self, multi, ['notebook-added', 'notebook-removed', 'tab-added', 'tab-removed'], 'multi_notebook', notebooks, view)
+			connect_handlers(self, window, ['tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event', 'configure-event'], 'window', notebooks, view)
 
 		else:
 			try:
@@ -293,8 +293,8 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 	def on_multi_notebook_notebook_added(self, multi, notebook, notebooks, view):
 		if notebook not in notebooks:
 			model = Gtk.ListStore(GdkPixbuf.Pixbuf, str, Gedit.Tab, 'gboolean')
-			connect_handlers(self, model, ('row-inserted', 'row-deleted', 'row-changed'), 'model', view, view.get_selection())
-			notebooks[notebook] = [[], model]
+			connect_handlers(self, model, ['row-inserted', 'row-deleted', 'row-changed'], 'model', view, view.get_selection())
+			notebooks[notebook] = ([], model)
 
 			for tab in notebook.get_children():
 				self.on_multi_notebook_tab_added(multi, notebook, tab, notebooks, view)
@@ -314,8 +314,8 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		stack, model = notebooks[notebook]
 		if tab not in stack:
 			stack.append(tab)
-			model.append([self._get_tab_icon(tab), self._get_tab_name(tab), tab, False])
-			connect_handlers(self, tab, ('notify::name', 'notify::state'), self.on_sync_icon_and_name, notebooks)
+			model.append((self._get_tab_icon(tab), self._get_tab_name(tab), tab, False))
+			connect_handlers(self, tab, ['notify::name', 'notify::state'], self.on_sync_icon_and_name, notebooks)
 
 	def on_multi_notebook_tab_removed(self, multi, notebook, tab, notebooks, view):
 		stack, model = notebooks[notebook]
@@ -354,7 +354,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 					model.move_after(model.get_iter(stack.index(tab)), None)
 					stack.remove(tab)
 				else:
-					model.insert(0, [self._get_tab_icon(tab), self._get_tab_name(tab), tab, False])
+					model.insert(0, (self._get_tab_icon(tab), self._get_tab_name(tab), tab, False))
 
 				stack.insert(0, tab)
 				model[0][self.SELECTED_TAB_COLUMN] = True
@@ -377,9 +377,9 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 		is_ctrl = state == Gdk.ModifierType.CONTROL_MASK
 		is_ctrl_shift = state == Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK
-		is_tab_key = key in ('ISO_Left_Tab', 'Tab')
-		is_page_key = key in ('Page_Up', 'Page_Down')
-		is_up_dir = key in ('ISO_Left_Tab', 'Page_Up')
+		is_tab_key = key in ['ISO_Left_Tab', 'Tab']
+		is_page_key = key in ['Page_Up', 'Page_Down']
+		is_up_dir = key in ['ISO_Left_Tab', 'Page_Up']
 
 		if not (((is_ctrl or is_ctrl_shift) and is_tab_key) or (is_ctrl and is_page_key)):
 			self._end_switching()
