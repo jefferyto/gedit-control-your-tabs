@@ -26,7 +26,7 @@ gi.require_version('Gedit', '3.0')
 import gettext
 import math
 import os.path
-from gi.repository import GObject, Gtk, Gdk, GdkPixbuf, Gio, GtkSource, Gedit, PeasGtk
+from gi.repository import GObject, GLib, Gtk, Gdk, GdkPixbuf, Gio, GtkSource, Gedit, PeasGtk
 from xml.sax.saxutils import escape
 from .utils import connect_handlers, disconnect_handlers
 
@@ -608,11 +608,17 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			# need to wait a little before asking the treeview for its preferred size
 			# maybe because treeview rendering is async?
 			# this feels like a giant hack
-			self._tabwin_resize_id = GObject.idle_add(self._do_tabwin_resize)
+			try:
+				resize_id = GLib.idle_add(self._do_tabwin_resize)
+			except TypeError:
+				# gedit 3.0
+				resize_id = GObject.idle_add(self._do_tabwin_resize)
+
+			self._tabwin_resize_id = resize_id
 
 	def _cancel_tabwin_resize(self):
 		if self._tabwin_resize_id:
-			GObject.source_remove(self._tabwin_resize_id)
+			GLib.source_remove(self._tabwin_resize_id)
 			self._tabwin_resize_id = None
 
 	def _do_tabwin_resize(self):
