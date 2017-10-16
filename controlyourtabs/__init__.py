@@ -205,166 +205,179 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
 		multi = get_multi_notebook(tab)
 
-		if multi:
-			self._multi = multi
-
-			for doc in window.get_documents():
-				notebook = Gedit.Tab.get_from_document(doc).get_parent()
-				self.on_multi_notebook_notebook_added(multi, notebook, notebooks, view)
-
-			connect_handlers(
-				self, multi,
-				[
-					'notebook-added',
-					'notebook-removed',
-					'tab-added',
-					'tab-removed'
-				],
-				'multi_notebook',
-				notebooks, view
-			)
-			connect_handlers(
-				self, window,
-				[
-					'tabs-reordered',
-					'active-tab-changed',
-					'key-press-event',
-					'key-release-event',
-					'focus-out-event',
-					'configure-event'
-				],
-				'window',
-				notebooks, view
-			)
-
-		else:
+		if not multi:
 			try:
 				Gedit.debug_plugin_message("cannot find multi notebook from %s", tab)
 			except AttributeError:
 				pass
 
+			return
+
+		self._multi = multi
+
+		for doc in window.get_documents():
+			notebook = Gedit.Tab.get_from_document(doc).get_parent()
+			self.on_multi_notebook_notebook_added(multi, notebook, notebooks, view)
+
+		connect_handlers(
+			self, multi,
+			[
+				'notebook-added',
+				'notebook-removed',
+				'tab-added',
+				'tab-removed'
+			],
+			'multi_notebook',
+			notebooks, view
+		)
+		connect_handlers(
+			self, window,
+			[
+				'tabs-reordered',
+				'active-tab-changed',
+				'key-press-event',
+				'key-release-event',
+				'focus-out-event',
+				'configure-event'
+			],
+			'window',
+			notebooks, view
+		)
+
 
 	# signal handlers / main logic
 
 	def on_multi_notebook_notebook_added(self, multi, notebook, notebooks, view):
-		if notebook not in notebooks:
-			model = Gtk.ListStore.new((GdkPixbuf.Pixbuf, str, Gedit.Tab, bool))
+		if notebook in notebooks:
+			return
 
-			connect_handlers(
-				self, model,
-				[
-					'row-inserted',
-					'row-deleted',
-					'row-changed'
-				],
-				'model',
-				view, view.get_selection()
-			)
+		model = Gtk.ListStore.new((GdkPixbuf.Pixbuf, str, Gedit.Tab, bool))
 
-			notebooks[notebook] = ([], model)
+		connect_handlers(
+			self, model,
+			[
+				'row-inserted',
+				'row-deleted',
+				'row-changed'
+			],
+			'model',
+			view, view.get_selection()
+		)
 
-			for tab in notebook.get_children():
-				self.on_multi_notebook_tab_added(multi, notebook, tab, notebooks, view)
+		notebooks[notebook] = ([], model)
+
+		for tab in notebook.get_children():
+			self.on_multi_notebook_tab_added(multi, notebook, tab, notebooks, view)
 
 	def on_multi_notebook_notebook_removed(self, multi, notebook, notebooks, view):
-		if notebook in notebooks:
-			for tab in notebook.get_children():
-				self.on_multi_notebook_tab_removed(multi, notebook, tab, notebooks, view)
+		if notebook not in notebooks:
+			return
 
-			stack, model = notebooks[notebook]
+		for tab in notebook.get_children():
+			self.on_multi_notebook_tab_removed(multi, notebook, tab, notebooks, view)
 
-			if view.get_model() is model:
-				view.set_model(None)
+		stack, model = notebooks[notebook]
 
-			disconnect_handlers(self, model)
+		if view.get_model() is model:
+			view.set_model(None)
 
-			del notebooks[notebook]
+		disconnect_handlers(self, model)
+
+		del notebooks[notebook]
 
 	def on_multi_notebook_tab_added(self, multi, notebook, tab, notebooks, view):
 		stack, model = notebooks[notebook]
 
-		if tab not in stack:
-			stack.append(tab)
+		if tab in stack:
+			return
 
-			model.append(
-				(
-					self._tabinfo.get_tab_icon(tab),
-					self._tabinfo.get_tab_name(tab),
-					tab,
-					False
-				)
-			)
+		stack.append(tab)
 
-			connect_handlers(
-				self, tab,
-				[
-					'notify::name',
-					'notify::state'
-				],
-				self.on_sync_icon_and_name,
-				notebooks
+		model.append(
+			(
+				self._tabinfo.get_tab_icon(tab),
+				self._tabinfo.get_tab_name(tab),
+				tab,
+				False
 			)
+		)
+
+		connect_handlers(
+			self, tab,
+			[
+				'notify::name',
+				'notify::state'
+			],
+			self.on_sync_icon_and_name,
+			notebooks
+		)
 
 	def on_multi_notebook_tab_removed(self, multi, notebook, tab, notebooks, view):
 		stack, model = notebooks[notebook]
 
-		if tab in stack:
-			disconnect_handlers(self, tab)
+		if tab not in stack:
+			return
 
-			model.remove(model.get_iter(stack.index(tab)))
+		disconnect_handlers(self, tab)
 
-			stack.remove(tab)
+		model.remove(model.get_iter(stack.index(tab)))
+
+		stack.remove(tab)
 
 	def on_window_tabs_reordered(self, window, notebooks, view):
 		multi = self._multi
 		tab = window.get_active_tab()
 		new_notebook = tab.get_parent()
 
-		if tab not in notebooks[new_notebook][0]:
-			old_notebook = None
+		if tab in notebooks[new_notebook][0]:
+			return
 
-			for notebook in notebooks:
-				if tab in notebooks[notebook][0]:
-					old_notebook = notebook
-					break
+		old_notebook = None
 
-			if old_notebook:
-				self.on_multi_notebook_tab_removed(multi, old_notebook, tab, notebooks, view)
+		for notebook in notebooks:
+			if tab in notebooks[notebook][0]:
+				old_notebook = notebook
+				break
 
-			self.on_multi_notebook_tab_added(multi, new_notebook, tab, notebooks, view)
+		if old_notebook:
+			self.on_multi_notebook_tab_removed(multi, old_notebook, tab, notebooks, view)
+
+		self.on_multi_notebook_tab_added(multi, new_notebook, tab, notebooks, view)
 
 	def on_window_active_tab_changed(self, window, tab, notebooks, view):
-		if not self._switching:
-			stack, model = notebooks[tab.get_parent()]
+		if self._switching:
+			return
 
-			if view.get_model() is not model:
-				view.set_model(model)
-				self._schedule_tabwin_resize()
+		stack, model = notebooks[tab.get_parent()]
 
-			for row in model:
-				row[self.SELECTED_TAB_COLUMN] = False
+		if view.get_model() is not model:
+			view.set_model(model)
+			self._schedule_tabwin_resize()
 
-			if not self._tabbing and not self._paging:
-				if tab in stack:
-					model.move_after(model.get_iter(stack.index(tab)), None)
-					stack.remove(tab)
+		for row in model:
+			row[self.SELECTED_TAB_COLUMN] = False
 
-				else:
-					model.insert(
-						0,
-						(
-							self._tabinfo.get_tab_icon(tab),
-							self._tabinfo.get_tab_name(tab),
-							tab,
-							False
-						)
-					)
-
-				stack.insert(0, tab)
-				model[0][self.SELECTED_TAB_COLUMN] = True
+		if not self._tabbing and not self._paging:
+			if tab in stack:
+				model.move_after(model.get_iter(stack.index(tab)), None)
+				stack.remove(tab)
 
 			else:
-				model[stack.index(tab)][self.SELECTED_TAB_COLUMN] = True
+				model.insert(
+					0,
+					(
+						self._tabinfo.get_tab_icon(tab),
+						self._tabinfo.get_tab_name(tab),
+						tab,
+						False
+					)
+				)
+
+			stack.insert(0, tab)
+			model[0][self.SELECTED_TAB_COLUMN] = True
+
+		else:
+			model[stack.index(tab)][self.SELECTED_TAB_COLUMN] = True
 
 	def on_window_key_press_event(self, window, event, notebooks, view):
 		key = Gdk.keyval_name(event.keyval)
@@ -390,39 +403,44 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 			return False
 
 		cur = window.get_active_tab()
-		if cur:
-			settings = self._settings
-			notebook = cur.get_parent()
-			stack, model = notebooks[notebook]
-			is_tabbing = is_tab_key and not (settings and settings['use-tabbar-order'])
-			tabs = stack if is_tabbing else notebook.get_children()
-			tlen = len(tabs)
 
-			if tlen > 1 and cur in tabs:
-				i = -1 if is_up_dir else 1
-				next = tabs[(tabs.index(cur) + i) % tlen]
+		if not cur:
+			return True
 
-				model[stack.index(cur)][self.SELECTED_TAB_COLUMN] = False
-				model[stack.index(next)][self.SELECTED_TAB_COLUMN] = True
+		settings = self._settings
+		notebook = cur.get_parent()
+		stack, model = notebooks[notebook]
+		is_tabbing = is_tab_key and not (settings and settings['use-tabbar-order'])
+		tabs = stack if is_tabbing else notebook.get_children()
+		tlen = len(tabs)
 
-				if is_tabbing:
-					tabwin = self._tabwin
+		if tlen < 2 or cur not in tabs:
+			return True
 
-					if not self._tabbing:
-						view.scroll_to_cell(Gtk.TreePath.new_first(), None, True, 0, 0)
-						tabwin.show_all()
+		i = -1 if is_up_dir else 1
+		next = tabs[(tabs.index(cur) + i) % tlen]
 
-					else:
-						tabwin.present_with_time(event.time)
+		model[stack.index(cur)][self.SELECTED_TAB_COLUMN] = False
+		model[stack.index(next)][self.SELECTED_TAB_COLUMN] = True
 
-					self._tabbing = True
+		if is_tabbing:
+			tabwin = self._tabwin
 
-				else:
-					self._paging = True
+			if not self._tabbing:
+				view.scroll_to_cell(Gtk.TreePath.new_first(), None, True, 0, 0)
+				tabwin.show_all()
 
-				self._switching = True
-				window.set_active_tab(next)
-				self._switching = False
+			else:
+				tabwin.present_with_time(event.time)
+
+			self._tabbing = True
+
+		else:
+			self._paging = True
+
+		self._switching = True
+		window.set_active_tab(next)
+		self._switching = False
 
 		return True
 
@@ -445,69 +463,83 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		self._schedule_tabwin_resize()
 
 	def _end_switching(self):
-		if self._tabbing or self._paging:
-			self._tabbing = False
-			self._paging = False
-			self._switching = False
-			self._ctrl_l = False
-			self._ctrl_r = False
+		if not self._tabbing and not self._paging:
+			return
 
-			self._tabwin.hide()
+		self._tabbing = False
+		self._paging = False
+		self._switching = False
+		self._ctrl_l = False
+		self._ctrl_r = False
 
-			window = self.window
-			tab = window.get_active_tab()
+		self._tabwin.hide()
 
-			if tab:
-				self.on_window_active_tab_changed(window, tab, self._notebooks, self._view)
+		window = self.window
+		tab = window.get_active_tab()
+
+		if tab:
+			self.on_window_active_tab_changed(window, tab, self._notebooks, self._view)
 
 	def on_model_row_inserted(self, model, path, iter, view, sel):
-		if view.get_model() is model:
-			self._schedule_tabwin_resize()
+		if view.get_model() is not model:
+			return
+
+		self._schedule_tabwin_resize()
 
 	def on_model_row_deleted(self, model, path, view, sel):
-		if view.get_model() is model:
-			self._schedule_tabwin_resize()
+		if view.get_model() is not model:
+			return
+
+		self._schedule_tabwin_resize()
 
 	def on_model_row_changed(self, model, path, iter, view, sel):
-		if view.get_model() is model:
-			if model[path][self.SELECTED_TAB_COLUMN]:
-				sel.select_path(path)
-				view.scroll_to_cell(path, None, True, 0.5, 0)
+		if view.get_model() is not model:
+			return
 
-			else:
-				sel.unselect_path(path)
+		if model[path][self.SELECTED_TAB_COLUMN]:
+			sel.select_path(path)
+			view.scroll_to_cell(path, None, True, 0.5, 0)
 
-			self._schedule_tabwin_resize()
+		else:
+			sel.unselect_path(path)
+
+		self._schedule_tabwin_resize()
 
 	def on_sync_icon_and_name(self, tab, pspec, notebooks):
 		stack, model = notebooks[tab.get_parent()]
 
-		if tab in stack:
-			path = stack.index(tab)
-			model[path][0] = self._tabinfo.get_tab_icon(tab)
-			model[path][1] = self._tabinfo.get_tab_name(tab)
+		if tab not in stack:
+			return
+
+		path = stack.index(tab)
+		model[path][0] = self._tabinfo.get_tab_icon(tab)
+		model[path][1] = self._tabinfo.get_tab_name(tab)
 
 
 	# tab window resizing
 
 	def _schedule_tabwin_resize(self):
-		if not self._tabwin_resize_id:
-			# need to wait a little before asking the treeview for its preferred size
-			# maybe because treeview rendering is async?
-			# this feels like a giant hack
-			try:
-				resize_id = GLib.idle_add(self._do_tabwin_resize)
+		if self._tabwin_resize_id:
+			return
 
-			except TypeError: # gedit 3.0
-				resize_id = GObject.idle_add(self._do_tabwin_resize)
+		# need to wait a little before asking the treeview for its preferred size
+		# maybe because treeview rendering is async?
+		# this feels like a giant hack
+		try:
+			resize_id = GLib.idle_add(self._do_tabwin_resize)
 
-			self._tabwin_resize_id = resize_id
+		except TypeError: # gedit 3.0
+			resize_id = GObject.idle_add(self._do_tabwin_resize)
+
+		self._tabwin_resize_id = resize_id
 
 	def _cancel_tabwin_resize(self):
-		if self._tabwin_resize_id:
-			GLib.source_remove(self._tabwin_resize_id)
+		if not self._tabwin_resize_id:
+			return
 
-			self._tabwin_resize_id = None
+		GLib.source_remove(self._tabwin_resize_id)
+
+		self._tabwin_resize_id = None
 
 	def _do_tabwin_resize(self):
 		view = self._view
@@ -586,15 +618,15 @@ class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 # this is a /hack/
 # can do window.get_template_child(Gedit.Window, 'multi_notebook') since 3.12
 def get_multi_notebook(tab):
-	multi = tab.get_parent()
+	widget = tab.get_parent()
 
-	while multi:
-		if multi.__gtype__.name == 'GeditMultiNotebook':
+	while widget:
+		if widget.__gtype__.name == 'GeditMultiNotebook':
 			break
 
-		multi = multi.get_parent()
+		widget = widget.get_parent()
 
-	return multi
+	return widget
 
 def get_settings():
 	schemas_path = os.path.join(BASE_PATH, 'schemas')
