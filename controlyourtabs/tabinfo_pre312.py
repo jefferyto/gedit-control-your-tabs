@@ -56,10 +56,8 @@ def get_tab_name(tab):
 	name = doc.get_short_name_for_display()
 	docname = Gedit.utils_str_middle_truncate(name, 60) # based on MAX_DOC_NAME_LENGTH in gedit-documents-panel.c
 
-	if not doc.get_modified():
-		tab_name = escape(docname)
-	else:
-		tab_name = "<i>%s</i>" % escape(docname)
+	tab_format = "<i>%s</i>" if doc.get_modified() else "%s"
+	tab_name = tab_format % escape(docname)
 
 	if doc.get_readonly():
 		tab_name += " [<i>%s</i>]" % escape(_("Read-Only"))
@@ -68,17 +66,16 @@ def get_tab_name(tab):
 
 # based on _gedit_tab_get_icon() in gedit-tab.c
 def get_tab_icon(tab):
+	state = tab.get_state()
 	theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
 	icon_size = get_tab_icon_size(tab)
-	state = tab.get_state()
+	pixbuf = None
 
 	if state in TAB_STATE_TO_STOCK_ICON:
 		try:
 			pixbuf = get_stock_icon(theme, TAB_STATE_TO_STOCK_ICON[state], icon_size)
 		except GObject.GError:
 			pixbuf = None
-	else:
-		pixbuf = None
 
 	if not pixbuf:
 		pixbuf = get_icon(theme, tab.get_document().get_location(), icon_size)
@@ -96,34 +93,25 @@ def get_stock_icon(theme, stock, size):
 
 # based on get_icon() in gedit-tab.c
 def get_icon(theme, location, size):
-	if not location:
-		return get_stock_icon(theme, Gtk.STOCK_FILE, size)
+	pixbuf = None
 
-	# FIXME: Doing a sync stat is bad, this should be fixed
-	try:
-		info = location.query_info(Gio.FILE_ATTRIBUTE_STANDARD_ICON, Gio.FileQueryInfoFlags.NONE, None)
-	except GObject.GError:
-		info = None
+	if location:
+		# FIXME: Doing a sync stat is bad, this should be fixed
+		try:
+			info = location.query_info(Gio.FILE_ATTRIBUTE_STANDARD_ICON, Gio.FileQueryInfoFlags.NONE, None)
+		except GObject.GError:
+			info = None
 
-	if not info:
-		return get_stock_icon(theme, Gtk.STOCK_FILE, size)
+		icon = info.get_icon() if info else None
+		icon_info = theme.lookup_by_gicon(icon, size, 0) if icon else None
+		pixbuf = icon_info.load_icon() if icon_info else None
 
-	icon = info.get_icon()
+	if pixbuf:
+		pixbuf = resize_icon(pixbuf, size)
+	else:
+		pixbuf = get_stock_icon(theme, Gtk.STOCK_FILE, size)
 
-	if not icon:
-		return get_stock_icon(theme, Gtk.STOCK_FILE, size)
-
-	icon_info = theme.lookup_by_gicon(icon, size, 0);
-
-	if not icon_info:
-		return get_stock_icon(theme, Gtk.STOCK_FILE, size)
-
-	pixbuf = icon_info.load_icon()
-
-	if not pixbuf:
-		return get_stock_icon(theme, Gtk.STOCK_FILE, size)
-
-	return resize_icon(pixbuf, size)
+	return pixbuf
 
 # based on resize_icon() in gedit-tab.c
 def resize_icon(pixbuf, size):

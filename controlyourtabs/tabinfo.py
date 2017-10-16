@@ -53,10 +53,8 @@ def get_tab_name(tab):
 	name = doc.get_short_name_for_display()
 	docname = Gedit.utils_str_middle_truncate(name, 60) # based on MAX_DOC_NAME_LENGTH in gedit-documents-panel.c
 
-	if not doc.get_modified():
-		tab_name = escape(docname)
-	else:
-		tab_name = "<b>%s</b>" % escape(docname)
+	tab_format = "<b>%s</b>" if doc.get_modified() else "%s"
+	tab_name = tab_format % escape(docname)
 
 	try:
 		file = doc.get_file()
@@ -71,19 +69,16 @@ def get_tab_name(tab):
 
 # based on _gedit_tab_get_icon() in gedit-tab.c
 def get_tab_icon(tab):
-	icon_name = None
-	pixbuf = None
 	state = tab.get_state()
 
-	if state in TAB_STATE_TO_NAMED_ICON:
-		icon_name = TAB_STATE_TO_NAMED_ICON[state]
+	if state not in TAB_STATE_TO_NAMED_ICON:
+		return None
 
-	if icon_name:
-		theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
-		icon_size = get_tab_icon_size(tab)
-		pixbuf = Gtk.IconTheme.load_icon(theme, icon_name, icon_size, 0)
+	theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
+	icon_name = TAB_STATE_TO_NAMED_ICON[state]
+	icon_size = get_tab_icon_size(tab)
 
-	return pixbuf
+	return Gtk.IconTheme.load_icon(theme, icon_name, icon_size, 0)
 
 def get_tab_icon_size(tab):
 	is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup(Gtk.IconSize.MENU)
