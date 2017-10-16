@@ -41,7 +41,7 @@ except:
 	_ = lambda s: s
 
 
-class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Configurable):
+class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 	__gtype_name__ = 'ControlYourTabsPlugin'
 
 	window = GObject.property(type=Gedit.Window)
@@ -59,8 +59,6 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 	MAX_TAB_WINDOW_ROWS = 9
 
 	MAX_TAB_WINDOW_HEIGHT_PERCENTAGE = 0.5
-
-	SETTINGS_SCHEMA_ID = 'com.thingsthemselves.gedit.plugins.controlyourtabs'
 
 	USE_TABBAR_ORDER = 'use-tabbar-order'
 
@@ -140,7 +138,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._icon_cell = icon_cell
 		self._space_cell = space_cell
 		self._tabwin_resize_id = None
-		self._settings = self._get_settings()
+		self._settings = get_settings()
 		self._tabinfo = tabinfo if is_side_panel_stack else tabinfo_pre312
 
 		tab = window.get_active_tab()
@@ -191,28 +189,6 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		pass
 
 
-	# settings ui
-
-	def do_create_configure_widget(self):
-		settings = self._get_settings()
-		if settings:
-			widget = Gtk.CheckButton(_("Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab"))
-			widget.set_active(settings.get_boolean(self.USE_TABBAR_ORDER))
-			connect_handlers(self, widget, ['toggled'], 'configure_check_button', settings)
-			connect_handlers(self, settings, ['changed::' + self.USE_TABBAR_ORDER], 'configure_settings', widget)
-		else:
-			widget = Gtk.Box()
-			widget.add(Gtk.Label(_("Sorry, no preferences are available for this version of gedit.")))
-		widget.set_border_width(5)
-		return widget
-
-	def on_configure_check_button_toggled(self, widget, settings):
-		settings.set_boolean(self.USE_TABBAR_ORDER, widget.get_active())
-
-	def on_configure_settings_changed_use_tabbar_order(self, settings, prop, widget):
-		widget.set_active(settings.get_boolean(self.USE_TABBAR_ORDER))
-
-
 	# plugin setup
 
 	def on_window_tab_added(self, window, tab):
@@ -225,7 +201,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._icon_cell.set_fixed_size(icon_size, icon_size)
 		self._space_cell.set_fixed_size(icon_size, icon_size)
 
-		multi = self._get_multi_notebook(tab)
+		multi = get_multi_notebook(tab)
 
 		if multi:
 			self._multi = multi
@@ -491,30 +467,86 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		return False
 
 
-	# misc
+class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 
-	# this is a /hack/
-	def _get_multi_notebook(self, tab):
-		multi = tab.get_parent()
-		while multi:
-			if multi.__gtype__.name == 'GeditMultiNotebook':
-				break
-			multi = multi.get_parent()
-		return multi
+	__gtype_name__ = 'ControlYourTabsConfigurable'
 
-	def _get_settings(self):
-		schemas_path = os.path.join(BASE_PATH, 'schemas')
+
+	def do_create_configure_widget(self):
+		settings = get_settings()
+
+		if settings:
+			widget = Gtk.CheckButton(_("Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab"))
+
+			settings.bind(
+				'use-tabbar-order',
+				widget, 'active',
+				Gio.SettingsBindFlags.DEFAULT
+			)
+
+		else:
+			widget = Gtk.Box()
+			widget.add(Gtk.Label(_("Sorry, no preferences are available for this version of gedit.")))
+
+		widget.set_border_width(5)
+
+		widget._settings = settings
+
+		return widget
+
+
+# this is a /hack/
+# can do window.get_template_child(Gedit.Window, 'multi_notebook') since 3.12
+def get_multi_notebook(tab):
+	multi = tab.get_parent()
+
+	while multi:
+		if multi.__gtype__.name == 'GeditMultiNotebook':
+			break
+
+		multi = multi.get_parent()
+
+	return multi
+
+def get_settings():
+	schemas_path = os.path.join(BASE_PATH, 'schemas')
+
+	try:
+		schema_source = Gio.SettingsSchemaSource.new_from_directory(
+			schemas_path,
+			Gio.SettingsSchemaSource.get_default(),
+			False
+		)
+	except AttributeError: # gedit < 3.4
 		try:
-			# available in gedit >= 3.4
-			schema_source = Gio.SettingsSchemaSource.new_from_directory(schemas_path, Gio.SettingsSchemaSource.get_default(), False)
-			schema = Gio.SettingsSchemaSource.lookup(schema_source, self.SETTINGS_SCHEMA_ID, False)
-			settings = Gio.Settings.new_full(schema, None, None) if schema else None
+			Gedit.debug_plugin_message("relocatable schemas not supported")
 		except AttributeError:
-			settings = None
-		except:
-			try:
-				Gedit.debug_plugin_message("could not load settings schema from %s", schemas_path)
-			except AttributeError:
-				pass
-			settings = None
-		return settings
+			pass
+
+		schema_source = None
+
+	except:
+		try:
+			Gedit.debug_plugin_message("could not load settings schema source from %s", schemas_path)
+		except AttributeError:
+			pass
+
+		schema_source = None
+
+	if not schema_source:
+		return None
+
+	schema = schema_source.lookup(
+		'com.thingsthemselves.gedit.plugins.controlyourtabs',
+		False
+	)
+
+	if not schema:
+		return None
+
+	return Gio.Settings.new_full(
+		schema,
+		None,
+		'/com/thingsthemselves/gedit/plugins/controlyourtabs/'
+	)
+
