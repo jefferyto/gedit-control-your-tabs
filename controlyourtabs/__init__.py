@@ -25,9 +25,9 @@ gi.require_version('Gedit', '3.0')
 
 import math
 import os.path
-from gi.repository import GObject, GLib, Gtk, Gdk, GdkPixbuf, Gio, GtkSource, Gedit, PeasGtk
-from xml.sax.saxutils import escape
+from gi.repository import GObject, GLib, Gtk, Gdk, GdkPixbuf, Gio, Gedit, PeasGtk
 from .utils import connect_handlers, disconnect_handlers
+from . import tabinfo, tabinfo_pre312
 
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 LOCALE_PATH = os.path.join(BASE_PATH, 'locale')
@@ -59,48 +59,6 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 	MAX_TAB_WINDOW_ROWS = 9
 
 	MAX_TAB_WINDOW_HEIGHT_PERCENTAGE = 0.5
-
-	# based on MAX_DOC_NAME_LENGTH in gedit-documents-panel.c
-	MAX_DOC_NAME_LENGTH = 60
-
-	# based on formats in tab_get_name() in gedit-documents-panel.c < 3.12
-	TAB_NAME_GEDITPANEL_FORMATS = {
-		'modified': "<i>%s</i>",
-		'readonly': " [<i>%s</i>]"
-	}
-
-	# based on formats in document_row_sync_tab_name_and_icon() in gedit-documents-panel.c >= 3.12
-	TAB_NAME_LISTBOX_FORMATS = {
-		'modified': "<b>%s</b>",
-		'readonly': " [%s]"
-	}
-
-	# based on switch statement in _gedit_tab_get_icon() in gedit-tab.c < 3.12
-	TAB_STATE_TO_STOCK_ICON = {
-		Gedit.TabState.STATE_LOADING: Gtk.STOCK_OPEN,
-		Gedit.TabState.STATE_REVERTING: Gtk.STOCK_REVERT_TO_SAVED,
-		Gedit.TabState.STATE_SAVING: Gtk.STOCK_SAVE,
-		Gedit.TabState.STATE_PRINTING: Gtk.STOCK_PRINT,
-		Gedit.TabState.STATE_PRINT_PREVIEWING: Gtk.STOCK_PRINT_PREVIEW,
-		Gedit.TabState.STATE_SHOWING_PRINT_PREVIEW: Gtk.STOCK_PRINT_PREVIEW,
-		Gedit.TabState.STATE_LOADING_ERROR: Gtk.STOCK_DIALOG_ERROR,
-		Gedit.TabState.STATE_REVERTING_ERROR: Gtk.STOCK_DIALOG_ERROR,
-		Gedit.TabState.STATE_SAVING_ERROR: Gtk.STOCK_DIALOG_ERROR,
-		Gedit.TabState.STATE_GENERIC_ERROR: Gtk.STOCK_DIALOG_ERROR,
-		Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION: Gtk.STOCK_DIALOG_WARNING
-	}
-
-	# based on switch statement in _gedit_tab_get_icon() in gedit-tab.c >= 3.12
-	TAB_STATE_TO_NAMED_ICON = {
-		Gedit.TabState.STATE_PRINTING: 'printer-printing-symbolic',
-		Gedit.TabState.STATE_PRINT_PREVIEWING: 'printer-symbolic',
-		Gedit.TabState.STATE_SHOWING_PRINT_PREVIEW: 'printer-symbolic',
-		Gedit.TabState.STATE_LOADING_ERROR: 'dialog-error-symbolic',
-		Gedit.TabState.STATE_REVERTING_ERROR: 'dialog-error-symbolic',
-		Gedit.TabState.STATE_SAVING_ERROR: 'dialog-error-symbolic',
-		Gedit.TabState.STATE_GENERIC_ERROR: 'dialog-error-symbolic',
-		Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION: 'dialog-warning-symbolic'
-	}
 
 	SETTINGS_SCHEMA_ID = 'com.thingsthemselves.gedit.plugins.controlyourtabs'
 
@@ -183,7 +141,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._space_cell = space_cell
 		self._tabwin_resize_id = None
 		self._settings = self._get_settings()
-		self._is_side_panel_stack = is_side_panel_stack
+		self._tabinfo = tabinfo if is_side_panel_stack else tabinfo_pre312
 
 		tab = window.get_active_tab()
 		if tab:
@@ -227,7 +185,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._space_cell = None
 		self._tabwin_resize_id = None
 		self._settings = None
-		self._is_side_panel_stack = None
+		self._tabinfo = None
 
 	def do_update_state(self):
 		pass
@@ -262,13 +220,10 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._setup(window, tab, self._notebooks, self._view)
 
 	def _setup(self, window, tab, notebooks, view):
-		if self._is_side_panel_stack:
-			is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup(Gtk.IconSize.MENU)
-		else:
-			is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup_for_settings(tab.get_settings(), Gtk.IconSize.MENU)
+		icon_size = self._tabinfo.get_tab_icon_size(tab)
 
-		self._icon_cell.set_fixed_size(icon_size_height, icon_size_height)
-		self._space_cell.set_fixed_size(icon_size_height, icon_size_height)
+		self._icon_cell.set_fixed_size(icon_size, icon_size)
+		self._space_cell.set_fixed_size(icon_size, icon_size)
 
 		multi = self._get_multi_notebook(tab)
 
@@ -314,7 +269,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		stack, model = notebooks[notebook]
 		if tab not in stack:
 			stack.append(tab)
-			model.append((self._get_tab_icon(tab), self._get_tab_name(tab), tab, False))
+			model.append((self._tabinfo.get_tab_icon(tab), self._tabinfo.get_tab_name(tab), tab, False))
 			connect_handlers(self, tab, ['notify::name', 'notify::state'], self.on_sync_icon_and_name, notebooks)
 
 	def on_multi_notebook_tab_removed(self, multi, notebook, tab, notebooks, view):
@@ -354,7 +309,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 					model.move_after(model.get_iter(stack.index(tab)), None)
 					stack.remove(tab)
 				else:
-					model.insert(0, (self._get_tab_icon(tab), self._get_tab_name(tab), tab, False))
+					model.insert(0, (self._tabinfo.get_tab_icon(tab), self._tabinfo.get_tab_name(tab), tab, False))
 
 				stack.insert(0, tab)
 				model[0][self.SELECTED_TAB_COLUMN] = True
@@ -473,132 +428,8 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		stack, model = notebooks[tab.get_parent()]
 		if tab in stack:
 			path = stack.index(tab)
-			model[path][0] = self._get_tab_icon(tab)
-			model[path][1] = self._get_tab_name(tab)
-
-
-	# tab name / icon
-
-	# based on
-	# <  3.12: tab_get_name() in gedit-documents-panel.c
-	# >= 3.12: doc_get_name() and document_row_sync_tab_name_and_icon() in gedit-documents-panel.c
-	def _get_tab_name(self, tab):
-		doc = tab.get_document()
-		name = doc.get_short_name_for_display()
-		docname = Gedit.utils_str_middle_truncate(name, self.MAX_DOC_NAME_LENGTH)
-		tab_name_formats = self.TAB_NAME_LISTBOX_FORMATS if self._is_side_panel_stack else self.TAB_NAME_GEDITPANEL_FORMATS
-
-		if not doc.get_modified():
-			tab_name = escape(docname)
-		else:
-			tab_name = tab_name_formats['modified'] % escape(docname)
-
-		try:
-			file = doc.get_file()
-			is_readonly = GtkSource.File.is_readonly(file)
-		except AttributeError:
-			is_readonly = doc.get_readonly() # deprecated since 3.18
-
-		if is_readonly:
-			tab_name += tab_name_formats['readonly'] % escape(_("Read-Only"))
-
-		return tab_name
-
-	def _get_tab_icon(self, tab):
-		if self._is_side_panel_stack:
-			icon = self._get_named_tab_icon(tab)
-		else:
-			icon = self._get_stock_tab_icon(tab)
-		return icon
-
-	# based on _gedit_tab_get_icon() in gedit-tab.c >= 3.12
-	def _get_named_tab_icon(self, tab):
-		icon_name = None
-		pixbuf = None
-		state = tab.get_state()
-
-		if state in self.TAB_STATE_TO_NAMED_ICON:
-			icon_name = self.TAB_STATE_TO_NAMED_ICON[state]
-
-		if icon_name:
-			theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
-			is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup(Gtk.IconSize.MENU)
-			pixbuf = Gtk.IconTheme.load_icon(theme, icon_name, icon_size_height, 0)
-
-		return pixbuf
-
-	# based on _gedit_tab_get_icon() in gedit-tab.c < 3.12
-	def _get_stock_tab_icon(self, tab):
-		theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
-		is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup_for_settings(tab.get_settings(), Gtk.IconSize.MENU)
-		state = tab.get_state()
-
-		if state in self.TAB_STATE_TO_STOCK_ICON:
-			try:
-				pixbuf = self._get_stock_icon(theme, self.TAB_STATE_TO_STOCK_ICON[state], icon_size_height)
-			except GObject.GError:
-				pixbuf = None
-		else:
-			pixbuf = None
-
-		if not pixbuf:
-			pixbuf = self._get_icon(theme, tab.get_document().get_location(), icon_size_height)
-
-		return pixbuf
-
-	# based on get_stock_icon() in gedit-tab.c in < 3.12
-	def _get_stock_icon(self, theme, stock, size):
-		pixbuf = theme.load_icon(stock, size, 0)
-		return self._resize_icon(pixbuf, size)
-
-	# based on get_icon() in gedit-tab.c in < 3.12
-	def _get_icon(self, theme, location, size):
-		if not location:
-			return self._get_stock_icon(theme, Gtk.STOCK_FILE, size)
-
-		# FIXME: Doing a sync stat is bad, this should be fixed
-		try:
-			info = location.query_info(Gio.FILE_ATTRIBUTE_STANDARD_ICON, Gio.FileQueryInfoFlags.NONE, None)
-		except GObject.GError:
-			info = None
-
-		if not info:
-			return self._get_stock_icon(theme, Gtk.STOCK_FILE, size)
-
-		icon = info.get_icon()
-
-		if not icon:
-			return self._get_stock_icon(theme, Gtk.STOCK_FILE, size)
-
-		icon_info = theme.lookup_by_gicon(icon, size, 0);
-
-		if not icon_info:
-			return self._get_stock_icon(theme, Gtk.STOCK_FILE, size)
-
-		pixbuf = icon_info.load_icon()
-
-		if not pixbuf:
-			return self._get_stock_icon(theme, Gtk.STOCK_FILE, size)
-
-		return self._resize_icon(pixbuf, size)
-
-	# based on resize_icon() in gedit-tab.c in < 3.12
-	def _resize_icon(self, pixbuf, size):
-		width = pixbuf.get_width()
-		height = pixbuf.get_height()
-
-		# if the icon is larger than the nominal size, scale down
-		if max(width, height) > size:
-			if width > height:
-				height = height * size / width
-				width = size
-			else:
-				width = width * size / height
-				height = size
-
-			pixbuf = pixbuf.scale_simple(width, height, GdkPixbuf.InterpType.BILINEAR)
-
-		return pixbuf
+			model[path][0] = self._tabinfo.get_tab_icon(tab)
+			model[path][1] = self._tabinfo.get_tab_name(tab)
 
 
 	# tab window resizing
