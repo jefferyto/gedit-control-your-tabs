@@ -72,7 +72,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		window = self.window
 		notebooks = {}
 
-		tabwin = Gtk.Window(type=Gtk.WindowType.POPUP)
+		tabwin = Gtk.Window.new(Gtk.WindowType.POPUP)
 		tabwin.set_transient_for(window)
 		tabwin.set_destroy_with_parent(True)
 		tabwin.set_accept_focus(False)
@@ -83,25 +83,26 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 		tabwin.set_skip_taskbar_hint(False)
 		tabwin.set_skip_pager_hint(False)
 
-		sw = Gtk.ScrolledWindow()
+		sw = Gtk.ScrolledWindow.new(None, None)
 		sw.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
 		sw.show()
 
 		tabwin.add(sw)
 
-		view = Gtk.TreeView()
+		view = Gtk.TreeView.new()
 		view.set_enable_search(False)
 		view.set_headers_visible(False)
 		view.show()
 
 		sw.add(view)
 
-		col = Gtk.TreeViewColumn(_("Documents"))
+		col = Gtk.TreeViewColumn.new()
+		col.set_title(_("Documents"))
 		col.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
 
-		icon_cell = Gtk.CellRendererPixbuf()
-		name_cell = Gtk.CellRendererText()
-		space_cell = Gtk.CellRendererPixbuf()
+		icon_cell = Gtk.CellRendererPixbuf.new()
+		name_cell = Gtk.CellRendererText.new()
+		space_cell = Gtk.CellRendererPixbuf.new()
 
 		col.pack_start(icon_cell, False)
 		col.pack_start(name_cell, True)
@@ -223,7 +224,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 
 	def on_multi_notebook_notebook_added(self, multi, notebook, notebooks, view):
 		if notebook not in notebooks:
-			model = Gtk.ListStore(GdkPixbuf.Pixbuf, str, Gedit.Tab, 'gboolean')
+			model = Gtk.ListStore.new([GdkPixbuf.Pixbuf, str, Gedit.Tab, bool])
 			connect_handlers(self, model, ['row-inserted', 'row-deleted', 'row-changed'], 'model', view, view.get_selection())
 			notebooks[notebook] = ([], model)
 
@@ -476,7 +477,9 @@ class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 		settings = get_settings()
 
 		if settings:
-			widget = Gtk.CheckButton(_("Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab"))
+			widget = Gtk.CheckButton.new_with_label(
+				_("Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab")
+			)
 
 			settings.bind(
 				'use-tabbar-order',
@@ -485,8 +488,12 @@ class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 			)
 
 		else:
-			widget = Gtk.Box()
-			widget.add(Gtk.Label(_("Sorry, no preferences are available for this version of gedit.")))
+			label = Gtk.Label.new(
+				_("Sorry, no preferences are available for this version of gedit.")
+			)
+
+			widget = Gtk.Box.new(Gtk.Orientation.VERTICAL, 0)
+			widget.add(label)
 
 		widget.set_border_width(5)
 
