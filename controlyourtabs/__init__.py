@@ -23,20 +23,20 @@ import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gedit', '3.0')
 
-import gettext
 import math
 import os.path
 from gi.repository import GObject, GLib, Gtk, Gdk, GdkPixbuf, Gio, GtkSource, Gedit, PeasGtk
 from xml.sax.saxutils import escape
 from .utils import connect_handlers, disconnect_handlers
 
-GETTEXT_PACKAGE = 'gedit-control-your-tabs'
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 LOCALE_PATH = os.path.join(BASE_PATH, 'locale')
 
 try:
-	gettext.bindtextdomain(GETTEXT_PACKAGE, LOCALE_PATH)
-	_ = lambda s: gettext.dgettext(GETTEXT_PACKAGE, s);
+	import gettext
+	gettext.bindtextdomain('gedit-control-your-tabs', LOCALE_PATH)
+	gettext.textdomain('gedit-control-your-tabs')
+	_ = gettext.gettext
 except:
 	_ = lambda s: s
 
