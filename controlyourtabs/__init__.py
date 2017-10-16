@@ -19,10 +19,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gedit', '3.0')
+
 import gettext
 import math
 import os.path
-from gi.repository import GObject, Gtk, Gdk, GdkPixbuf, Gio, GtkSource, Gedit, PeasGtk
+from gi.repository import GObject, GLib, Gtk, Gdk, GdkPixbuf, Gio, GtkSource, Gedit, PeasGtk
 from xml.sax.saxutils import escape
 from .utils import connect_handlers, disconnect_handlers
 
@@ -30,8 +34,12 @@ GETTEXT_PACKAGE = 'gedit-control-your-tabs'
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 LOCALE_PATH = os.path.join(BASE_PATH, 'locale')
 
-gettext.bindtextdomain(GETTEXT_PACKAGE, LOCALE_PATH)
-_ = lambda s: gettext.dgettext(GETTEXT_PACKAGE, s);
+try:
+	gettext.bindtextdomain(GETTEXT_PACKAGE, LOCALE_PATH)
+	_ = lambda s: gettext.dgettext(GETTEXT_PACKAGE, s);
+except:
+	_ = lambda s: s
+
 
 class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Configurable):
 	__gtype_name__ = 'ControlYourTabsPlugin'
@@ -40,12 +48,12 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 	SELECTED_TAB_COLUMN = 3
 
-	META_KEYS = ('Shift_L', 'Shift_R',
+	META_KEYS = ['Shift_L', 'Shift_R',
 	             'Control_L', 'Control_R',
 	             'Meta_L', 'Meta_R',
 	             'Super_L', 'Super_R',
 	             'Hyper_L', 'Hyper_R',
-	             'Alt_L', 'Alt_R')
+	             'Alt_L', 'Alt_R']
 	             # Compose, Apple?
 
 	MAX_TAB_WINDOW_ROWS = 9
@@ -183,7 +191,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			if self._multi:
 				self.on_window_active_tab_changed(window, tab, notebooks, view)
 		else:
-			connect_handlers(self, window, ('tab-added',), 'window')
+			connect_handlers(self, window, ['tab-added'], 'window')
 
 	def do_deactivate(self):
 		window = self.window
@@ -232,8 +240,8 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		if settings:
 			widget = Gtk.CheckButton(_("Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab"))
 			widget.set_active(settings.get_boolean(self.USE_TABBAR_ORDER))
-			connect_handlers(self, widget, ('toggled',), 'configure_check_button', settings)
-			connect_handlers(self, settings, ('changed::' + self.USE_TABBAR_ORDER,), 'configure_settings', widget)
+			connect_handlers(self, widget, ['toggled'], 'configure_check_button', settings)
+			connect_handlers(self, settings, ['changed::' + self.USE_TABBAR_ORDER], 'configure_settings', widget)
 		else:
 			widget = Gtk.Box()
 			widget.add(Gtk.Label(_("Sorry, no preferences are available for this version of gedit.")))
@@ -270,8 +278,8 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			for doc in window.get_documents():
 				self.on_multi_notebook_notebook_added(multi, Gedit.Tab.get_from_document(doc).get_parent(), notebooks, view)
 
-			connect_handlers(self, multi, ('notebook-added', 'notebook-removed', 'tab-added', 'tab-removed'), 'multi_notebook', notebooks, view)
-			connect_handlers(self, window, ('tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event', 'configure-event'), 'window', notebooks, view)
+			connect_handlers(self, multi, ['notebook-added', 'notebook-removed', 'tab-added', 'tab-removed'], 'multi_notebook', notebooks, view)
+			connect_handlers(self, window, ['tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event', 'configure-event'], 'window', notebooks, view)
 
 		else:
 			try:
@@ -285,8 +293,8 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 	def on_multi_notebook_notebook_added(self, multi, notebook, notebooks, view):
 		if notebook not in notebooks:
 			model = Gtk.ListStore(GdkPixbuf.Pixbuf, str, Gedit.Tab, 'gboolean')
-			connect_handlers(self, model, ('row-inserted', 'row-deleted', 'row-changed'), 'model', view, view.get_selection())
-			notebooks[notebook] = [[], model]
+			connect_handlers(self, model, ['row-inserted', 'row-deleted', 'row-changed'], 'model', view, view.get_selection())
+			notebooks[notebook] = ([], model)
 
 			for tab in notebook.get_children():
 				self.on_multi_notebook_tab_added(multi, notebook, tab, notebooks, view)
@@ -297,7 +305,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 				self.on_multi_notebook_tab_removed(multi, notebook, tab, notebooks, view)
 
 			stack, model = notebooks[notebook]
-			if view.get_model() == model:
+			if view.get_model() is model:
 				view.set_model(None)
 			disconnect_handlers(self, model)
 			del notebooks[notebook]
@@ -306,8 +314,8 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		stack, model = notebooks[notebook]
 		if tab not in stack:
 			stack.append(tab)
-			model.append([self._get_tab_icon(tab), self._get_tab_name(tab), tab, False])
-			connect_handlers(self, tab, ('notify::name', 'notify::state'), self.on_sync_icon_and_name, notebooks)
+			model.append((self._get_tab_icon(tab), self._get_tab_name(tab), tab, False))
+			connect_handlers(self, tab, ['notify::name', 'notify::state'], self.on_sync_icon_and_name, notebooks)
 
 	def on_multi_notebook_tab_removed(self, multi, notebook, tab, notebooks, view):
 		stack, model = notebooks[notebook]
@@ -334,7 +342,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		if not self._switching:
 			stack, model = notebooks[tab.get_parent()]
 
-			if view.get_model() != model:
+			if view.get_model() is not model:
 				view.set_model(model)
 				self._schedule_tabwin_resize()
 
@@ -346,7 +354,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 					model.move_after(model.get_iter(stack.index(tab)), None)
 					stack.remove(tab)
 				else:
-					model.insert(0, [self._get_tab_icon(tab), self._get_tab_name(tab), tab, False])
+					model.insert(0, (self._get_tab_icon(tab), self._get_tab_name(tab), tab, False))
 
 				stack.insert(0, tab)
 				model[0][self.SELECTED_TAB_COLUMN] = True
@@ -369,9 +377,9 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 
 		is_ctrl = state == Gdk.ModifierType.CONTROL_MASK
 		is_ctrl_shift = state == Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK
-		is_tab_key = key in ('ISO_Left_Tab', 'Tab')
-		is_page_key = key in ('Page_Up', 'Page_Down')
-		is_up_dir = key in ('ISO_Left_Tab', 'Page_Up')
+		is_tab_key = key in ['ISO_Left_Tab', 'Tab']
+		is_page_key = key in ['Page_Up', 'Page_Down']
+		is_up_dir = key in ['ISO_Left_Tab', 'Page_Up']
 
 		if not (((is_ctrl or is_ctrl_shift) and is_tab_key) or (is_ctrl and is_page_key)):
 			self._end_switching()
@@ -445,15 +453,15 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 				self.on_window_active_tab_changed(window, tab, self._notebooks, self._view)
 
 	def on_model_row_inserted(self, model, path, iter, view, sel):
-		if view.get_model() == model:
+		if view.get_model() is model:
 			self._schedule_tabwin_resize()
 
 	def on_model_row_deleted(self, model, path, view, sel):
-		if view.get_model() == model:
+		if view.get_model() is model:
 			self._schedule_tabwin_resize()
 
 	def on_model_row_changed(self, model, path, iter, view, sel):
-		if view.get_model() == model:
+		if view.get_model() is model:
 			if model[path][self.SELECTED_TAB_COLUMN]:
 				sel.select_path(path)
 				view.scroll_to_cell(path, None, True, 0.5, 0)
@@ -600,11 +608,17 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			# need to wait a little before asking the treeview for its preferred size
 			# maybe because treeview rendering is async?
 			# this feels like a giant hack
-			self._tabwin_resize_id = GObject.idle_add(self._do_tabwin_resize)
+			try:
+				resize_id = GLib.idle_add(self._do_tabwin_resize)
+			except TypeError:
+				# gedit 3.0
+				resize_id = GObject.idle_add(self._do_tabwin_resize)
+
+			self._tabwin_resize_id = resize_id
 
 	def _cancel_tabwin_resize(self):
 		if self._tabwin_resize_id:
-			GObject.source_remove(self._tabwin_resize_id)
+			GLib.source_remove(self._tabwin_resize_id)
 			self._tabwin_resize_id = None
 
 	def _do_tabwin_resize(self):
@@ -614,7 +628,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		view_min_size, view_nat_size = view.get_preferred_size()
 		view_height = max(view_min_size.height, view_nat_size.height)
 
-		num_rows = len(view.get_model())
+		num_rows = max(len(view.get_model()), 2)
 		row_height = math.ceil(view_height / num_rows)
 		max_rows_height = self.MAX_TAB_WINDOW_ROWS * row_height
 
@@ -643,6 +657,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._tabwin.set_size_request(tabwin_width, tabwin_height)
 
 		self._tabwin_resize_id = None
+		return False
 
 
 	# misc
@@ -664,5 +679,11 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 			schema = Gio.SettingsSchemaSource.lookup(schema_source, self.SETTINGS_SCHEMA_ID, False)
 			settings = Gio.Settings.new_full(schema, None, None) if schema else None
 		except AttributeError:
+			settings = None
+		except:
+			try:
+				Gedit.debug_plugin_message("could not load settings schema from %s", schemas_path)
+			except AttributeError:
+				pass
 			settings = None
 		return settings
