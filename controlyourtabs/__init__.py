@@ -41,10 +41,11 @@ except:
 	_ = lambda s: s
 
 
-class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
-	__gtype_name__ = 'ControlYourTabsPlugin'
+class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
-	window = GObject.property(type=Gedit.Window)
+	__gtype_name__ = 'ControlYourTabsWindowActivatable'
+
+	window = GObject.Property(type=Gedit.Window)
 
 	SELECTED_TAB_COLUMN = 3
 
@@ -60,10 +61,6 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 
 	MAX_TAB_WINDOW_HEIGHT_PERCENTAGE = 0.5
 
-	USE_TABBAR_ORDER = 'use-tabbar-order'
-
-
-	# gedit plugin api
 
 	def __init__(self):
 		GObject.Object.__init__(self)
@@ -322,7 +319,7 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable):
 			settings = self._settings
 			notebook = cur.get_parent()
 			stack, model = notebooks[notebook]
-			is_tabbing = is_tab_key and not (settings and settings.get_boolean(self.USE_TABBAR_ORDER))
+			is_tabbing = is_tab_key and not (settings and settings['use-tabbar-order'])
 			tabs = stack if is_tabbing else notebook.get_children()
 			tlen = len(tabs)
 
