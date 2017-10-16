@@ -140,10 +140,13 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		self._tabinfo = tabinfo if is_side_panel_stack else tabinfo_pre312
 
 		tab = window.get_active_tab()
+
 		if tab:
 			self._setup(window, tab, notebooks, view)
+
 			if self._multi:
 				self.on_window_active_tab_changed(window, tab, notebooks, view)
+
 		else:
 			connect_handlers(self, window, ['tab-added'], 'window')
 
@@ -191,6 +194,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
 	def on_window_tab_added(self, window, tab):
 		disconnect_handlers(self, window)
+
 		self._setup(window, tab, self._notebooks, self._view)
 
 	def _setup(self, window, tab, notebooks, view):
@@ -205,10 +209,33 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 			self._multi = multi
 
 			for doc in window.get_documents():
-				self.on_multi_notebook_notebook_added(multi, Gedit.Tab.get_from_document(doc).get_parent(), notebooks, view)
+				notebook = Gedit.Tab.get_from_document(doc).get_parent()
+				self.on_multi_notebook_notebook_added(multi, notebook, notebooks, view)
 
-			connect_handlers(self, multi, ['notebook-added', 'notebook-removed', 'tab-added', 'tab-removed'], 'multi_notebook', notebooks, view)
-			connect_handlers(self, window, ['tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event', 'configure-event'], 'window', notebooks, view)
+			connect_handlers(
+				self, multi,
+				[
+					'notebook-added',
+					'notebook-removed',
+					'tab-added',
+					'tab-removed'
+				],
+				'multi_notebook',
+				notebooks, view
+			)
+			connect_handlers(
+				self, window,
+				[
+					'tabs-reordered',
+					'active-tab-changed',
+					'key-press-event',
+					'key-release-event',
+					'focus-out-event',
+					'configure-event'
+				],
+				'window',
+				notebooks, view
+			)
 
 		else:
 			try:
@@ -221,8 +248,19 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
 	def on_multi_notebook_notebook_added(self, multi, notebook, notebooks, view):
 		if notebook not in notebooks:
-			model = Gtk.ListStore.new([GdkPixbuf.Pixbuf, str, Gedit.Tab, bool])
-			connect_handlers(self, model, ['row-inserted', 'row-deleted', 'row-changed'], 'model', view, view.get_selection())
+			model = Gtk.ListStore.new((GdkPixbuf.Pixbuf, str, Gedit.Tab, bool))
+
+			connect_handlers(
+				self, model,
+				[
+					'row-inserted',
+					'row-deleted',
+					'row-changed'
+				],
+				'model',
+				view, view.get_selection()
+			)
+
 			notebooks[notebook] = ([], model)
 
 			for tab in notebook.get_children():
@@ -234,37 +272,65 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 				self.on_multi_notebook_tab_removed(multi, notebook, tab, notebooks, view)
 
 			stack, model = notebooks[notebook]
+
 			if view.get_model() is model:
 				view.set_model(None)
+
 			disconnect_handlers(self, model)
+
 			del notebooks[notebook]
 
 	def on_multi_notebook_tab_added(self, multi, notebook, tab, notebooks, view):
 		stack, model = notebooks[notebook]
+
 		if tab not in stack:
 			stack.append(tab)
-			model.append((self._tabinfo.get_tab_icon(tab), self._tabinfo.get_tab_name(tab), tab, False))
-			connect_handlers(self, tab, ['notify::name', 'notify::state'], self.on_sync_icon_and_name, notebooks)
+
+			model.append(
+				(
+					self._tabinfo.get_tab_icon(tab),
+					self._tabinfo.get_tab_name(tab),
+					tab,
+					False
+				)
+			)
+
+			connect_handlers(
+				self, tab,
+				[
+					'notify::name',
+					'notify::state'
+				],
+				self.on_sync_icon_and_name,
+				notebooks
+			)
 
 	def on_multi_notebook_tab_removed(self, multi, notebook, tab, notebooks, view):
 		stack, model = notebooks[notebook]
+
 		if tab in stack:
 			disconnect_handlers(self, tab)
+
 			model.remove(model.get_iter(stack.index(tab)))
+
 			stack.remove(tab)
 
 	def on_window_tabs_reordered(self, window, notebooks, view):
 		multi = self._multi
 		tab = window.get_active_tab()
 		new_notebook = tab.get_parent()
+
 		if tab not in notebooks[new_notebook][0]:
 			old_notebook = None
+
 			for notebook in notebooks:
 				if tab in notebooks[notebook][0]:
 					old_notebook = notebook
 					break
+
 			if old_notebook:
 				self.on_multi_notebook_tab_removed(multi, old_notebook, tab, notebooks, view)
+
 			self.on_multi_notebook_tab_added(multi, new_notebook, tab, notebooks, view)
 
 	def on_window_active_tab_changed(self, window, tab, notebooks, view):
@@ -282,8 +348,17 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 				if tab in stack:
 					model.move_after(model.get_iter(stack.index(tab)), None)
 					stack.remove(tab)
+
 				else:
-					model.insert(0, (self._tabinfo.get_tab_icon(tab), self._tabinfo.get_tab_name(tab), tab, False))
+					model.insert(
+						0,
+						(
+							self._tabinfo.get_tab_icon(tab),
+							self._tabinfo.get_tab_name(tab),
+							tab,
+							False
+						)
+					)
 
 				stack.insert(0, tab)
 				model[0][self.SELECTED_TAB_COLUMN] = True
@@ -336,10 +411,12 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 					if not self._tabbing:
 						view.scroll_to_cell(Gtk.TreePath.new_first(), None, True, 0, 0)
 						tabwin.show_all()
+
 					else:
 						tabwin.present_with_time(event.time)
 
 					self._tabbing = True
+
 				else:
 					self._paging = True
 
@@ -374,10 +451,12 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 			self._switching = False
 			self._ctrl_l = False
 			self._ctrl_r = False
+
 			self._tabwin.hide()
 
 			window = self.window
 			tab = window.get_active_tab()
+
 			if tab:
 				self.on_window_active_tab_changed(window, tab, self._notebooks, self._view)
 
@@ -394,12 +473,15 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 			if model[path][self.SELECTED_TAB_COLUMN]:
 				sel.select_path(path)
 				view.scroll_to_cell(path, None, True, 0.5, 0)
+
 			else:
 				sel.unselect_path(path)
+
 			self._schedule_tabwin_resize()
 
 	def on_sync_icon_and_name(self, tab, pspec, notebooks):
 		stack, model = notebooks[tab.get_parent()]
+
 		if tab in stack:
 			path = stack.index(tab)
 			model[path][0] = self._tabinfo.get_tab_icon(tab)
@@ -415,8 +497,8 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 			# this feels like a giant hack
 			try:
 				resize_id = GLib.idle_add(self._do_tabwin_resize)
-			except TypeError:
-				# gedit 3.0
+
+			except TypeError: # gedit 3.0
 				resize_id = GObject.idle_add(self._do_tabwin_resize)
 
 			self._tabwin_resize_id = resize_id
@@ -424,6 +506,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 	def _cancel_tabwin_resize(self):
 		if self._tabwin_resize_id:
 			GLib.source_remove(self._tabwin_resize_id)
+
 			self._tabwin_resize_id = None
 
 	def _do_tabwin_resize(self):
@@ -462,6 +545,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		self._tabwin.set_size_request(tabwin_width, tabwin_height)
 
 		self._tabwin_resize_id = None
+
 		return False
 
 
@@ -521,9 +605,11 @@ def get_settings():
 			Gio.SettingsSchemaSource.get_default(),
 			False
 		)
+
 	except AttributeError: # gedit < 3.4
 		try:
 			Gedit.debug_plugin_message("relocatable schemas not supported")
+
 		except AttributeError:
 			pass
 
@@ -532,6 +618,7 @@ def get_settings():
 	except:
 		try:
 			Gedit.debug_plugin_message("could not load settings schema source from %s", schemas_path)
+
 		except AttributeError:
 			pass
 
