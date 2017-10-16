@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.3.1 (2017-10-17)
 * Show a debug message if the settings schema could not be loaded
 * Fixed division by zero error
 

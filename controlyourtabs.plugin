@@ -8,4 +8,4 @@ Description=Switch between document tabs using Ctrl+Tab / Ctrl+Shift+Tab and Ctr
 Authors=Jeffery To <jeffery.to@gmail.com>
 Copyright=Copyright © 2010-2014, 2016-2017 Jeffery To
 Website=https://github.com/jefferyto/gedit-control-your-tabs
-Version=0.3.0
+Version=0.3.1
