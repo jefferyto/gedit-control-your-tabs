@@ -45,7 +45,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
 	__gtype_name__ = 'ControlYourTabsWindowActivatable'
 
-	window = GObject.Property(type=Gedit.Window)
+	window = GObject.property(type=Gedit.Window) # lowercase 'p' for gedit < 3.4
 
 	SELECTED_TAB_COLUMN = 3
 
@@ -208,7 +208,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		if not multi:
 			try:
 				Gedit.debug_plugin_message("cannot find multi notebook from %s", tab)
-			except AttributeError:
+			except AttributeError: # gedit < 3.4
 				pass
 
 			return
@@ -642,7 +642,7 @@ def get_settings():
 		try:
 			Gedit.debug_plugin_message("relocatable schemas not supported")
 
-		except AttributeError:
+		except AttributeError: # gedit < 3.4
 			pass
 
 		schema_source = None
@@ -651,7 +651,7 @@ def get_settings():
 		try:
 			Gedit.debug_plugin_message("could not load settings schema source from %s", schemas_path)
 
-		except AttributeError:
+		except AttributeError: # gedit < 3.4
 			pass
 
 		schema_source = None
