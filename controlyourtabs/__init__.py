@@ -156,7 +156,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		for doc in window.get_documents():
 			disconnect_handlers(self, Gedit.Tab.get_from_document(doc))
 
-		self._cancel_tabwin_resize()
+		self.cancel_tabwin_resize()
 		self.end_switching()
 
 		self._tabwin.destroy()
@@ -342,7 +342,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
 		if view.get_model() is not model:
 			view.set_model(model)
-			self._schedule_tabwin_resize()
+			self.schedule_tabwin_resize()
 
 		for row in model:
 			row[self.SELECTED_TAB_COLUMN] = False
@@ -401,19 +401,19 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		self.end_switching()
 
 	def on_window_configure_event(self, window, event, notebooks, view):
-		self._schedule_tabwin_resize()
+		self.schedule_tabwin_resize()
 
 	def on_model_row_inserted(self, model, path, iter, view, sel):
 		if view.get_model() is not model:
 			return
 
-		self._schedule_tabwin_resize()
+		self.schedule_tabwin_resize()
 
 	def on_model_row_deleted(self, model, path, view, sel):
 		if view.get_model() is not model:
 			return
 
-		self._schedule_tabwin_resize()
+		self.schedule_tabwin_resize()
 
 	def on_model_row_changed(self, model, path, iter, view, sel):
 		if view.get_model() is not model:
@@ -426,7 +426,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		else:
 			sel.unselect_path(path)
 
-		self._schedule_tabwin_resize()
+		self.schedule_tabwin_resize()
 
 	def on_sync_icon_and_name(self, tab, pspec, notebooks):
 		stack, model = notebooks[tab.get_parent()]
@@ -503,7 +503,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
 	# tab window resizing
 
-	def _schedule_tabwin_resize(self):
+	def schedule_tabwin_resize(self):
 		if self._tabwin_resize_id:
 			return
 
@@ -511,14 +511,14 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		# maybe because treeview rendering is async?
 		# this feels like a giant hack
 		try:
-			resize_id = GLib.idle_add(self._do_tabwin_resize)
+			resize_id = GLib.idle_add(self.do_tabwin_resize)
 
 		except TypeError: # gedit 3.0
-			resize_id = GObject.idle_add(self._do_tabwin_resize)
+			resize_id = GObject.idle_add(self.do_tabwin_resize)
 
 		self._tabwin_resize_id = resize_id
 
-	def _cancel_tabwin_resize(self):
+	def cancel_tabwin_resize(self):
 		if not self._tabwin_resize_id:
 			return
 
@@ -526,7 +526,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
 		self._tabwin_resize_id = None
 
-	def _do_tabwin_resize(self):
+	def do_tabwin_resize(self):
 		view = self._view
 		sw = self._sw
 
