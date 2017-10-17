@@ -137,7 +137,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 				self.on_window_active_tab_changed(window, tab, models, view)
 
 		else:
-			connect_handlers(self, window, ['tab-added'], 'window')
+			connect_handlers(self, window, ['tab-added'], 'setup')
 
 	def do_deactivate(self):
 		window = self.window
@@ -180,7 +180,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
 	# plugin setup
 
-	def on_window_tab_added(self, window, tab):
+	def on_setup_tab_added(self, window, tab):
 		disconnect_handlers(self, window)
 
 		self._setup(window, tab, self._models, self._view)
