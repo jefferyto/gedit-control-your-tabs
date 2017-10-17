@@ -427,7 +427,6 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 			tabwin = self._tabwin
 
 			if not self._tabbing:
-				view.scroll_to_cell(Gtk.TreePath.new_first(), None, True, 0, 0)
 				tabwin.show_all()
 
 			else:
