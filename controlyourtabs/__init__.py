@@ -27,7 +27,7 @@ import math
 import os.path
 from gi.repository import GObject, GLib, Gtk, Gdk, GdkPixbuf, Gio, Gedit, PeasGtk
 from .utils import connect_handlers, disconnect_handlers
-from . import tabinfo, tabinfo_pre312
+from . import keyinfo, tabinfo, tabinfo_pre312
 
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 LOCALE_PATH = os.path.join(BASE_PATH, 'locale')
@@ -48,14 +48,6 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 	window = GObject.property(type=Gedit.Window) # lowercase 'p' for gedit < 3.4
 
 	SELECTED_TAB_COLUMN = 3
-
-	META_KEYS = ['Shift_L', 'Shift_R',
-	             'Control_L', 'Control_R',
-	             'Meta_L', 'Meta_R',
-	             'Super_L', 'Super_R',
-	             'Hyper_L', 'Hyper_R',
-	             'Alt_L', 'Alt_R']
-	             # Compose, Apple?
 
 	MAX_TAB_WINDOW_ROWS = 9
 
@@ -123,11 +115,10 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		else:
 			is_side_panel_stack = isinstance(window.get_side_panel(), GtkStack) # since 3.12
 
-		self._tabbing = False
-		self._paging = False
-		self._switching = False
-		self._ctrl_l = False
-		self._ctrl_r = False
+		self._is_switching = False
+		self._is_tabwin_visible = False
+		self._is_control_held = keyinfo.default_control_held()
+		self._initial_tab = None
 		self._multi = None
 		self._notebooks = notebooks
 		self._tabwin = tabwin
@@ -166,15 +157,14 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 			disconnect_handlers(self, Gedit.Tab.get_from_document(doc))
 
 		self._cancel_tabwin_resize()
-		self._end_switching()
+		self.end_switching()
 
 		self._tabwin.destroy()
 
-		self._tabbing = None
-		self._paging = None
-		self._switching = None
-		self._ctrl_l = None
-		self._ctrl_r = None
+		self._is_switching = None
+		self._is_tabwin_visible = None
+		self._is_control_held = None
+		self._initial_tab = None
 		self._multi = None
 		self._notebooks = None
 		self._tabwin = None
@@ -313,6 +303,9 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		)
 
 	def on_multi_notebook_tab_removed(self, multi, notebook, tab, notebooks, view):
+		if tab == self._initial_tab:
+			self._initial_tab = None
+
 		stack, model = notebooks[notebook]
 
 		if tab not in stack:
@@ -345,9 +338,6 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		self.on_multi_notebook_tab_added(multi, new_notebook, tab, notebooks, view)
 
 	def on_window_active_tab_changed(self, window, tab, notebooks, view):
-		if self._switching:
-			return
-
 		stack, model = notebooks[tab.get_parent()]
 
 		if view.get_model() is not model:
@@ -357,7 +347,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		for row in model:
 			row[self.SELECTED_TAB_COLUMN] = False
 
-		if not self._tabbing and not self._paging:
+		if not self._is_switching:
 			if tab in stack:
 				model.move_after(model.get_iter(stack.index(tab)), None)
 				stack.remove(tab)
@@ -380,104 +370,38 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 			model[stack.index(tab)][self.SELECTED_TAB_COLUMN] = True
 
 	def on_window_key_press_event(self, window, event, notebooks, view):
-		key = Gdk.keyval_name(event.keyval)
-		state = event.state & Gtk.accelerator_get_default_mod_mask()
-
-		if key == 'Control_L':
-			self._ctrl_l = True
-
-		if key == 'Control_R':
-			self._ctrl_r = True
-
-		if key in self.META_KEYS or not state & Gdk.ModifierType.CONTROL_MASK:
-			return False
-
-		is_ctrl = state == Gdk.ModifierType.CONTROL_MASK
-		is_ctrl_shift = state == Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK
-		is_tab_key = key in ['ISO_Left_Tab', 'Tab']
-		is_page_key = key in ['Page_Up', 'Page_Down']
-		is_up_dir = key in ['ISO_Left_Tab', 'Page_Up']
-
-		if not (((is_ctrl or is_ctrl_shift) and is_tab_key) or (is_ctrl and is_page_key)):
-			self._end_switching()
-			return False
-
-		cur = window.get_active_tab()
-
-		if not cur:
-			return True
+		self._is_control_held = keyinfo.updated_control_held(event, self._is_control_held, True)
 
 		settings = self._settings
-		notebook = cur.get_parent()
-		stack, model = notebooks[notebook]
-		is_tabbing = is_tab_key and not (settings and settings['use-tabbar-order'])
-		tabs = stack if is_tabbing else notebook.get_children()
-		tlen = len(tabs)
+		is_control_tab, is_control_page, is_control_escape = keyinfo.is_control_keys(event)
+		block_event = True
 
-		if tlen < 2 or cur not in tabs:
-			return True
+		if is_control_tab and settings and settings['use-tabbar-order']:
+			is_control_tab = False
+			is_control_page = True
 
-		i = -1 if is_up_dir else 1
-		next = tabs[(tabs.index(cur) + i) % tlen]
+		if self._is_switching and is_control_escape:
+			self.end_switching(True)
 
-		model[stack.index(cur)][self.SELECTED_TAB_COLUMN] = False
-		model[stack.index(next)][self.SELECTED_TAB_COLUMN] = True
-
-		if is_tabbing:
-			tabwin = self._tabwin
-
-			if not self._tabbing:
-				tabwin.show_all()
-
-			else:
-				tabwin.present_with_time(event.time)
-
-			self._tabbing = True
+		elif is_control_tab or is_control_page:
+			self.switch_tab(is_control_tab, keyinfo.is_next_key(event), event.time)
 
 		else:
-			self._paging = True
+			block_event = self._is_switching
 
-		self._switching = True
-		window.set_active_tab(next)
-		self._switching = False
-
-		return True
+		return block_event
 
 	def on_window_key_release_event(self, window, event, notebooks, view):
-		key = Gdk.keyval_name(event.keyval)
+		self._is_control_held = keyinfo.updated_control_held(event, self._is_control_held, False)
 
-		if key == 'Control_L':
-			self._ctrl_l = False
-
-		if key == 'Control_R':
-			self._ctrl_r = False
-
-		if not self._ctrl_l and not self._ctrl_r:
-			self._end_switching()
+		if not any(self._is_control_held):
+			self.end_switching()
 
 	def on_window_focus_out_event(self, window, event, notebooks, view):
-		self._end_switching()
+		self.end_switching()
 
 	def on_window_configure_event(self, window, event, notebooks, view):
 		self._schedule_tabwin_resize()
-
-	def _end_switching(self):
-		if not self._tabbing and not self._paging:
-			return
-
-		self._tabbing = False
-		self._paging = False
-		self._switching = False
-		self._ctrl_l = False
-		self._ctrl_r = False
-
-		self._tabwin.hide()
-
-		window = self.window
-		tab = window.get_active_tab()
-
-		if tab:
-			self.on_window_active_tab_changed(window, tab, self._notebooks, self._view)
 
 	def on_model_row_inserted(self, model, path, iter, view, sel):
 		if view.get_model() is not model:
@@ -513,6 +437,68 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		path = stack.index(tab)
 		model[path][0] = self._tabinfo.get_tab_icon(tab)
 		model[path][1] = self._tabinfo.get_tab_name(tab)
+
+
+	# tab switching
+
+	def switch_tab(self, use_mru_order, to_next_tab, time):
+		window = self.window
+		current_tab = window.get_active_tab()
+
+		if not current_tab:
+			return
+
+		notebook = current_tab.get_parent()
+		stack, model = self._notebooks[notebook]
+
+		tabs = stack if use_mru_order else notebook.get_children()
+		num_tabs = len(tabs)
+
+		if num_tabs < 2 or current_tab not in tabs:
+			return
+
+		step = 1 if to_next_tab else -1
+		next_tab = tabs[(tabs.index(current_tab) + step) % num_tabs]
+
+		if use_mru_order:
+			tabwin = self._tabwin
+
+			if not self._is_tabwin_visible:
+				tabwin.show_all()
+
+			else:
+				tabwin.present_with_time(time)
+
+			self._is_tabwin_visible = True
+
+		if not self._is_switching:
+			self._initial_tab = current_tab
+
+		self._is_switching = True
+
+		window.set_active_tab(next_tab)
+
+	def end_switching(self, do_revert=False):
+		if not self._is_switching:
+			return
+
+		window = self.window
+		initial_tab = self._initial_tab
+
+		self._tabwin.hide()
+
+		self._is_switching = False
+		self._is_tabwin_visible = False
+		self._initial_tab = None
+
+		if do_revert and initial_tab:
+			window.set_active_tab(initial_tab)
+
+		else:
+			tab = window.get_active_tab()
+
+			if tab:
+				self.on_window_active_tab_changed(window, tab, self._notebooks, self._view)
 
 
 	# tab window resizing
