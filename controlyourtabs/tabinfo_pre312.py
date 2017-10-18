@@ -29,8 +29,7 @@ LOCALE_PATH = os.path.join(BASE_PATH, 'locale')
 try:
 	import gettext
 	gettext.bindtextdomain('gedit-control-your-tabs', LOCALE_PATH)
-	gettext.textdomain('gedit-control-your-tabs')
-	_ = gettext.gettext
+	_ = lambda s: gettext.dgettext('gedit-control-your-tabs', s)
 except:
 	_ = lambda s: s
 
