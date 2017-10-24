@@ -40,6 +40,11 @@ try:
 except:
 	_ = lambda s: s
 
+try:
+	debug_plugin_message = Gedit.debug_plugin_message
+except: # before 3.4
+	debug_plugin_message = lambda fmt, *fmt_args: None
+
 
 class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
@@ -191,10 +196,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		multi = get_multi_notebook(tab)
 
 		if not multi:
-			try:
-				Gedit.debug_plugin_message("cannot find multi notebook from %s", tab)
-			except AttributeError: # gedit < 3.4
-				pass
+			debug_plugin_message("cannot find multi notebook from %s", tab)
 
 			return
 
@@ -785,18 +787,12 @@ def get_settings():
 		)
 
 	except AttributeError: # gedit < 3.4
-		try:
-			Gedit.debug_plugin_message("relocatable schemas not supported")
-		except AttributeError: # gedit < 3.4
-			pass
+		debug_plugin_message("relocatable schemas not supported")
 
 		schema_source = None
 
 	except:
-		try:
-			Gedit.debug_plugin_message("could not load settings schema source from %s", schemas_path)
-		except AttributeError: # gedit < 3.4
-			pass
+		debug_plugin_message("could not load settings schema source from %s", schemas_path)
 
 		schema_source = None
 
