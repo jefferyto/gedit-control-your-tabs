@@ -131,7 +131,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		tab = window.get_active_tab()
 
 		if tab:
-			self._setup(window, tab, tab_models)
+			self.setup(window, tab, tab_models)
 
 			if self._multi:
 				self.active_tab_changed(tab, tab_models[tab.get_parent()])
@@ -180,9 +180,9 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 	def on_setup_tab_added(self, window, tab, tab_models):
 		disconnect_handlers(self, window)
 
-		self._setup(window, tab, tab_models)
+		self.setup(window, tab, tab_models)
 
-	def _setup(self, window, tab, tab_models):
+	def setup(self, window, tab, tab_models):
 		icon_size = self._tabinfo.get_tab_icon_size(tab)
 
 		self._icon_cell.set_fixed_size(icon_size, icon_size)
