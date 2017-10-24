@@ -25,6 +25,7 @@ gi.require_version('Gedit', '3.0')
 
 import math
 import os.path
+from functools import wraps
 from gi.repository import GObject, GLib, Gtk, Gdk, GdkPixbuf, Gio, Gedit, PeasGtk
 from .utils import connect_handlers, disconnect_handlers
 from . import keyinfo, tabinfo, tabinfo_pre312
@@ -56,7 +57,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
 	def do_activate(self):
 		window = self.window
-		models = {}
+		tab_models = {}
 
 		tabwin = Gtk.Window.new(Gtk.WindowType.POPUP)
 		tabwin.set_transient_for(window)
@@ -94,8 +95,8 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		col.pack_start(name_cell, True)
 		col.pack_start(space_cell, False)
 
-		col.add_attribute(icon_cell, 'pixbuf', 2)
-		col.add_attribute(name_cell, 'markup', 3)
+		col.add_attribute(icon_cell, 'pixbuf', 0)
+		col.add_attribute(name_cell, 'markup', 1)
 
 		view.append_column(col)
 
@@ -117,7 +118,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		self._is_control_held = keyinfo.default_control_held()
 		self._initial_tab = None
 		self._multi = None
-		self._models = models
+		self._tab_models = tab_models
 		self._tabwin = tabwin
 		self._view = view
 		self._sw = sw
@@ -130,20 +131,20 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		tab = window.get_active_tab()
 
 		if tab:
-			self._setup(window, tab, models)
+			self._setup(window, tab, tab_models)
 
 			if self._multi:
-				self.active_tab_changed(tab, models)
+				self.active_tab_changed(tab, tab_models[tab.get_parent()])
 
 		else:
-			connect_handlers(self, window, ['tab-added'], 'setup', models)
+			connect_handlers(self, window, ['tab-added'], 'setup', tab_models)
 
 	def do_deactivate(self):
 		multi = self._multi
-		models = self._models
+		tab_models = self._tab_models
 
-		for notebook in list(models.keys()):
-			self.untrack_notebook(notebook, models)
+		for notebook in list(tab_models.keys()):
+			self.untrack_notebook(notebook, tab_models)
 
 		if multi:
 			disconnect_handlers(self, multi)
@@ -160,7 +161,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		self._is_control_held = None
 		self._initial_tab = None
 		self._multi = None
-		self._models = None
+		self._tab_models = None
 		self._tabwin = None
 		self._view = None
 		self._sw = None
@@ -176,12 +177,12 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
 	# plugin setup
 
-	def on_setup_tab_added(self, window, tab, models):
+	def on_setup_tab_added(self, window, tab, tab_models):
 		disconnect_handlers(self, window)
 
-		self._setup(window, tab, models)
+		self._setup(window, tab, tab_models)
 
-	def _setup(self, window, tab, models):
+	def _setup(self, window, tab, tab_models):
 		icon_size = self._tabinfo.get_tab_icon_size(tab)
 
 		self._icon_cell.set_fixed_size(icon_size, icon_size)
@@ -206,7 +207,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 				'tab-removed'
 			],
 			'multi_notebook',
-			models
+			tab_models
 		)
 		connect_handlers(
 			self, window,
@@ -219,65 +220,67 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 				'configure-event'
 			],
 			'window',
-			models
+			tab_models
 		)
 
 		self._multi = multi
 
 		for document in window.get_documents():
 			notebook = Gedit.Tab.get_from_document(document).get_parent()
-			self.track_notebook(notebook, models)
+			self.track_notebook(notebook, tab_models)
 
 
 	# tracking notebooks / tabs
 
-	def track_notebook(self, notebook, models):
-		if notebook in models:
+	def track_notebook(self, notebook, tab_models):
+		if notebook in tab_models:
 			return
 
-		model = self.new_model()
+		tab_model = ControlYourTabsTabModel(self._tabinfo)
 
 		connect_handlers(
-			self, model,
+			self, tab_model,
 			[
 				'row-inserted',
 				'row-deleted',
 				'row-changed'
-				# the only time we reorder rows is when the active tab changes
-				# when we do that, we unselect all rows first, then select the active row
-				# so we don't need to listen to rows-reordered
 			],
-			'model'
+			self.on_tab_model_row_changed
+		)
+		connect_handlers(
+			self, tab_model,
+			[
+				'selected-path-changed'
+			],
+			'tab_model'
 		)
 
-		models[notebook] = model
+		tab_models[notebook] = tab_model
 
 		for tab in notebook.get_children():
-			self.track_tab(notebook, tab, models)
+			self.track_tab(tab, tab_model)
 
-	def untrack_notebook(self, notebook, models):
-		if notebook not in models:
+	def untrack_notebook(self, notebook, tab_models):
+		if notebook not in tab_models:
 			return
 
+		tab_model = tab_models[notebook]
+
 		for tab in notebook.get_children():
-			self.untrack_tab(notebook, tab, models)
+			self.untrack_tab(tab, tab_model)
 
-		model = models[notebook]
-
-		if self.is_active_view_model(model):
+		if self.is_active_view_model(tab_model):
 			self.set_active_view_model(None)
 
-		disconnect_handlers(self, model)
+		disconnect_handlers(self, tab_model)
 
-		del models[notebook]
+		del tab_models[notebook]
 
-	def track_tab(self, notebook, tab, models):
-		model = models[notebook]
-
-		if self.tab_in_model(model, tab):
+	def track_tab(self, tab, tab_model):
+		if tab in tab_model:
 			return
 
-		self.append_model_row(model, tab)
+		tab_model.append(tab)
 
 		connect_handlers(
 			self, tab,
@@ -285,56 +288,51 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 				'notify::name',
 				'notify::state'
 			],
-			self.on_sync_icon_and_name,
-			models
+			self.on_tab_notify_name_state,
+			tab_model
 		)
 
-	def untrack_tab(self, notebook, tab, models):
+	def untrack_tab(self, tab, tab_model):
 		if tab == self._initial_tab:
 			self._initial_tab = None
 
-		model = models[notebook]
-
-		if not self.tab_in_model(model, tab):
+		if tab not in tab_model:
 			return
 
 		disconnect_handlers(self, tab)
 
-		self.remove_model_row(model, tab)
+		tab_model.remove(tab)
 
-	def active_tab_changed(self, tab, models):
-		model = models[tab.get_parent()]
-
-		self.unselect_model_rows(model)
-
+	def active_tab_changed(self, tab, tab_model):
 		if not self._is_switching:
-			if self.tab_in_model(model, tab):
-				self.move_model_row_to_top(model, tab)
-			else:
-				self.prepend_model_row(model, tab)
+			if tab not in tab_model:
+				# can this happen?
+				self.track_tab(tab, tab_model)
 
-		self.select_model_row(model, tab)
+			tab_model.move_after(tab)
 
-		if not self.is_active_view_model(model):
-			self.set_active_view_model(model)
+		tab_model.select(tab)
+
+		if not self.is_active_view_model(tab_model):
+			self.set_active_view_model(tab_model)
 			self.schedule_tabwin_resize()
 
 
 	# signal handlers
 
-	def on_multi_notebook_notebook_added(self, multi, notebook, models):
-		self.track_notebook(notebook, models)
+	def on_multi_notebook_notebook_added(self, multi, notebook, tab_models):
+		self.track_notebook(notebook, tab_models)
 
-	def on_multi_notebook_notebook_removed(self, multi, notebook, models):
-		self.untrack_notebook(notebook, models)
+	def on_multi_notebook_notebook_removed(self, multi, notebook, tab_models):
+		self.untrack_notebook(notebook, tab_models)
 
-	def on_multi_notebook_tab_added(self, multi, notebook, tab, models):
-		self.track_tab(notebook, tab, models)
+	def on_multi_notebook_tab_added(self, multi, notebook, tab, tab_models):
+		self.track_tab(tab, tab_models[notebook])
 
-	def on_multi_notebook_tab_removed(self, multi, notebook, tab, models):
-		self.untrack_tab(notebook, tab, models)
+	def on_multi_notebook_tab_removed(self, multi, notebook, tab, tab_models):
+		self.untrack_tab(tab, tab_models[notebook])
 
-	def on_window_tabs_reordered(self, window, models):
+	def on_window_tabs_reordered(self, window, tab_models):
 		# XXX reordering tabs doesn't necessarily involve the active tab
 		# and reordering only happens within a notebook, not across notebooks
 		# ...
@@ -342,192 +340,90 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		tab = window.get_active_tab()
 		new_notebook = tab.get_parent()
 
-		if self.tab_in_model(models[new_notebook], tab):
+		tab_model = tab_models[new_notebook]
+
+		if tab in tab_model:
 			return
 
 		old_notebook = None
 
-		for notebook in models:
-			if self.tab_in_model(models[notebook], tab):
+		for notebook in tab_models:
+			tab_model = tab_models[notebook]
+			if tab in tab_model:
 				old_notebook = notebook
 				break
 
 		if old_notebook:
-			self.untrack_tab(old_notebook, tab, models)
+			self.untrack_tab(tab, tab_models[old_notebook])
 
-		self.track_tab(new_notebook, tab, models)
+		self.track_tab(tab, tab_models[new_notebook])
 
-	def on_window_active_tab_changed(self, window, tab, models):
-		self.active_tab_changed(tab, models)
+	def on_window_active_tab_changed(self, window, tab, tab_models):
+		self.active_tab_changed(tab, tab_models[tab.get_parent()])
 
-	def on_window_key_press_event(self, window, event, models):
+	def on_window_key_press_event(self, window, event, tab_models):
 		self._is_control_held = keyinfo.updated_control_held(event, self._is_control_held, True)
 
 		return self.key_press_event(event)
 
-	def on_window_key_release_event(self, window, event, models):
+	def on_window_key_release_event(self, window, event, tab_models):
 		self._is_control_held = keyinfo.updated_control_held(event, self._is_control_held, False)
 
 		if not any(self._is_control_held):
 			self.end_switching()
 
-	def on_window_focus_out_event(self, window, event, models):
+	def on_window_focus_out_event(self, window, event, tab_models):
 		self.end_switching()
 
-	def on_window_configure_event(self, window, event, models):
+	def on_window_configure_event(self, window, event, tab_models):
 		self.schedule_tabwin_resize()
 
-	def on_sync_icon_and_name(self, tab, pspec, models):
-		model = models[tab.get_parent()]
-
-		if not self.tab_in_model(model, tab):
+	def on_tab_notify_name_state(self, tab, pspec, tab_model):
+		if tab not in tab_model:
 			return
 
-		self.update_model_row(model, tab)
+		tab_model.update(tab)
 
-	def on_model_row_inserted(self, model, path, iter):
-		if not self.is_active_view_model(model):
+	def on_tab_model_row_changed(self, tab_model, path):
+		if not self.is_active_view_model(tab_model):
 			return
 
-		# rows that are inserted are always not selected
 		self.schedule_tabwin_resize()
 
-	def on_model_row_deleted(self, model, path):
-		if not self.is_active_view_model(model):
+	def on_tab_model_selected_path_changed(self, tab_model, path):
+		if not self.is_active_view_model(tab_model):
 			return
 
-		self.update_view_selection()
-		self.schedule_tabwin_resize()
-
-	def on_model_row_changed(self, model, path, iter):
-		if not self.is_active_view_model(model):
-			return
-
-		selected = self.is_model_row_selected(model, path)
-		self.set_view_selection(path, selected)
-
-		self.schedule_tabwin_resize()
+		self.set_view_selection(path)
 
 
 	# tree view
 
-	def is_active_view_model(self, model):
+	def is_active_view_model(self, tab_model):
+		model = tab_model.model if tab_model else None
 		return self._view.get_model() is model
 
-	def set_active_view_model(self, model):
+	def set_active_view_model(self, tab_model):
+		model = None
+		selected_path = None
+
+		if tab_model:
+			model = tab_model.model
+			selected_path = tab_model.get_selected_path()
+
 		self._view.set_model(model)
+		self.set_view_selection(selected_path)
 
-		self.update_view_selection()
-
-	def update_view_selection(self):
-		model = self._view.get_model()
-
-		index = self.get_model_row_selected(model) if model else -1
-
-		self._view.get_selection().unselect_all()
-
-		if index > 0:
-			self.set_view_selection(index, True)
-
-	def set_view_selection(self, index, selected):
+	def set_view_selection(self, path):
 		view = self._view
 		selection = view.get_selection()
 
-		if selected:
-			selection.select_path(index)
-			view.scroll_to_cell(index, None, True, 0.5, 0)
+		if path:
+			selection.select_path(path)
+			view.scroll_to_cell(path, None, True, 0.5, 0)
 
 		else:
-			selection.unselect_path(index)
-
-
-	# tree model
-
-	def new_model(self):
-		return Gtk.ListStore.new((Gedit.Tab, bool, GdkPixbuf.Pixbuf, str))
-
-	def get_model_tab(self, model, index):
-		return model[index][0]
-
-	def model_tab_index(self, model, tab_or_index):
-		if not isinstance(tab_or_index, Gedit.Tab):
-			return tab_or_index
-
-		index = 0
-
-		for row in model:
-			if row[0] == tab_or_index:
-				break
-			index = index + 1
-
-		if index == len(model):
-			raise ValueError("tab is not in model")
-
-		return index
-
-	def tab_in_model(self, model, tab):
-		try:
-			index = self.model_tab_index(model, tab)
-		except ValueError:
-			found = False
-		else:
-			found = True
-
-		return found
-
-	def new_model_row(self, tab):
-		tabinfo = self._tabinfo
-
-		return (
-			tab,
-			False,
-			tabinfo.get_tab_icon(tab),
-			tabinfo.get_tab_name(tab)
-		)
-
-	def append_model_row(self, model, tab):
-		model.append(self.new_model_row(tab))
-
-	def prepend_model_row(self, model, tab):
-		model.prepend(self.new_model_row(tab))
-
-	def remove_model_row(self, model, tab_or_index):
-		index = self.model_tab_index(model, tab_or_index)
-		del model[index]
-
-	def move_model_row_to_top(self, model, tab_or_index):
-		index = self.model_tab_index(model, tab_or_index)
-		model.move_after(model.get_iter(index), None)
-
-	def unselect_model_rows(self, model):
-		for row in model:
-			row[1] = False
-
-	def select_model_row(self, model, tab_or_index):
-		index = self.model_tab_index(model, tab_or_index)
-		model[index][1] = True
-
-	def is_model_row_selected(self, model, tab_or_index):
-		index = self.model_tab_index(model, tab_or_index)
-		return model[index][1]
-
-	def get_model_row_selected(self, model):
-		index = 0
-
-		for row in model:
-			if row[1]:
-				break
-			index = index + 1
-
-		return index if index < len(model) else -1
-
-	def update_model_row(self, model, tab_or_index):
-		tabinfo = self._tabinfo
-		index = self.model_tab_index(model, tab_or_index)
-		tab = model[index][0]
-
-		model[index][2] = tabinfo.get_tab_icon(tab)
-		model[index][3] = tabinfo.get_tab_name(tab)
+			selection.unselect_all()
 
 
 	# tab switching
@@ -560,31 +456,18 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 			return
 
 		notebook = current_tab.get_parent()
+
+		tabs = self._tab_models[notebook] if use_mru_order else notebook.get_children()
+		num_tabs = len(tabs)
+
+		if num_tabs < 2 or current_tab not in tabs:
+			return
+
+		current_index = tabs.index(current_tab)
 		step = 1 if to_next_tab else -1
+		next_index = (current_index + step) % num_tabs
 
-		if use_mru_order:
-			model = self._models[notebook]
-			num_tabs = len(model)
-
-			if num_tabs < 2 or not self.tab_in_model(model, current_tab):
-				return
-
-			current_index = self.model_tab_index(model, current_tab)
-			next_index = (current_index + step) % num_tabs
-
-			next_tab = self.get_model_tab(model, next_index)
-
-		else:
-			tabs = notebook.get_children()
-			num_tabs = len(tabs)
-
-			if num_tabs < 2:
-				return
-
-			current_index = tabs.index(current_tab)
-			next_index = (current_index + step) % num_tabs
-
-			next_tab = tabs[next_index]
+		next_tab = tabs[next_index]
 
 		if not self._is_switching:
 			self._initial_tab = current_tab
@@ -624,7 +507,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 			tab = window.get_active_tab()
 
 			if tab:
-				self.active_tab_changed(tab, self._models)
+				self.active_tab_changed(tab, self._tab_models[tab.get_parent()])
 
 
 	# tab window resizing
@@ -689,6 +572,159 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		self._tabwin_resize_id = None
 
 		return False
+
+
+class ControlYourTabsTabModel(GObject.Object):
+
+	__gtype_name__ = 'ControlYourTabsTabModel'
+
+	__gsignals__ = { # gedit < 3.6
+		'row-inserted': (GObject.SignalFlags.RUN_FIRST, None, (Gtk.TreePath,)),
+		'row-deleted': (GObject.SignalFlags.RUN_FIRST, None, (Gtk.TreePath,)),
+		'row-changed': (GObject.SignalFlags.RUN_FIRST, None, (Gtk.TreePath,)),
+		'rows-reordered': (GObject.SignalFlags.RUN_FIRST, None, ()),
+		'selected-path-changed': (GObject.SignalFlags.RUN_FIRST, None, (Gtk.TreePath,))
+	}
+
+
+	def _model_modifier(fn):
+		@wraps(fn)
+		def wrapper(self, *args, **kwargs):
+			prev_path = self.get_selected_path()
+
+			result = fn(self, *args, **kwargs)
+
+			cur_path = self.get_selected_path()
+
+			if cur_path != prev_path:
+				self.emit('selected-path-changed', cur_path)
+
+			return result
+
+		return wrapper
+
+
+	def __init__(self, tabinfo):
+		GObject.Object.__init__(self)
+
+		self._model = Gtk.ListStore.new((GdkPixbuf.Pixbuf, str, Gedit.Tab))
+		self._references = {}
+		self._selected = None
+		self._tabinfo = tabinfo
+
+		connect_handlers(
+			self, self._model,
+			[
+				'row-inserted',
+				'row-deleted',
+				'row-changed',
+				'rows-reordered'
+			],
+			'model'
+		)
+
+	def __len__(self):
+		return len(self._model)
+
+	def __getitem__(self, key):
+		return self._model[key][2]
+
+	@_model_modifier
+	def __delitem__(self, key):
+		tab = self._model[key][2]
+
+		if self._selected == tab:
+			self._selected = None
+
+		del self._references[tab]
+		del self._model[key]
+
+	def __iter__(self):
+		return [row[0] for row in self._model]
+
+	def __contains__(self, item):
+		return item in self._references
+
+	@property
+	def model(self):
+		return self._model
+
+	def on_model_row_inserted(self, model, path, iter_):
+		self.emit('row-inserted', path)
+
+	def on_model_row_deleted(self, model, path):
+		self.emit('row-deleted', path)
+
+	def on_model_row_changed(self, model, path, iter_):
+		self.emit('row-changed', path)
+
+	def on_model_rows_reordered(self, model, path, iter_, new_order):
+		self.emit('rows-reordered')
+
+	@_model_modifier
+	def insert(self, position, tab):
+		tab_iter = self._model.insert(
+			position,
+			(
+				self._tabinfo.get_tab_icon(tab),
+				self._tabinfo.get_tab_name(tab),
+				tab
+			)
+		)
+		self._references[tab] = Gtk.TreeRowReference.new(self._model, self._model.get_path(tab_iter))
+
+	def append(self, tab):
+		self.insert(-1, tab)
+
+	def prepend(self, tab):
+		self.insert(0, tab)
+
+	def remove(self, tab):
+		del self[self.get_path(tab)]
+
+	@_model_modifier
+	def move(self, tab, sibling, move_before):
+		tab_iter = self._get_iter(tab)
+		sibling_iter = self._get_iter(sibling) if sibling else None
+
+		if move_before:
+			self._model.move_before(tab_iter, sibling_iter)
+		else:
+			self._model.move_after(tab_iter, sibling_iter)
+
+	def move_before(self, tab, sibling=None):
+		self.move(tab, sibling, True)
+
+	def move_after(self, tab, sibling=None):
+		self.move(tab, sibling, False)
+
+	def get_path(self, tab):
+		return self._references[tab].get_path()
+
+	def index(self, tab):
+		return int(self.get_path(tab).to_string())
+
+	def _get_iter(self, tab):
+		return self._model.get_iter(self.get_path(tab))
+
+	@_model_modifier
+	def select(self, tab):
+		self._selected = tab
+
+	def unselect(self):
+		self.select(None)
+
+	def get_selected(self):
+		return self._selected
+
+	def get_selected_path(self):
+		return self.get_path(self._selected) if self._selected else None
+
+	def update(self, tab):
+		path = self.get_path(tab)
+
+		self._model[path][0] = self._tabinfo.get_tab_icon(tab)
+		self._model[path][1] = self._tabinfo.get_tab_name(tab)
 
 
 class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
