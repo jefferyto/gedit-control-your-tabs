@@ -21,6 +21,7 @@
 
 from gi.repository import Gtk, Gdk
 
+
 CONTROL_MASK = Gdk.ModifierType.CONTROL_MASK
 
 CONTROL_SHIFT_MASK = Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK
