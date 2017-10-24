@@ -362,12 +362,12 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		self.active_tab_changed(tab, tab_models[tab.get_parent()])
 
 	def on_window_key_press_event(self, window, event, tab_models):
-		self._is_control_held = keyinfo.updated_control_held(event, self._is_control_held, True)
+		self._is_control_held = keyinfo.update_control_held(event, self._is_control_held, True)
 
 		return self.key_press_event(event)
 
 	def on_window_key_release_event(self, window, event, tab_models):
-		self._is_control_held = keyinfo.updated_control_held(event, self._is_control_held, False)
+		self._is_control_held = keyinfo.update_control_held(event, self._is_control_held, False)
 
 		if not any(self._is_control_held):
 			self.end_switching()

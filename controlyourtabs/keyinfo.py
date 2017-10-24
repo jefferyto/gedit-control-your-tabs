@@ -39,7 +39,7 @@ ESCAPE_KEY = Gdk.KEY_Escape
 def default_control_held():
 	return [False for control_key in CONTROL_KEY_LIST]
 
-def updated_control_held(event, prev_statuses, new_status):
+def update_control_held(event, prev_statuses, new_status):
 	keyval = event.keyval
 
 	return [
