@@ -3,7 +3,8 @@
 ## Unreleased
 * Added Ctrl-Esc to cancel tab switching, causes the initial tab (before
   switching began) to be active again
-* Prevent all input during tab switching instead of cancelling switching
+* Prevent all input during tab switching, if the tab switching window is
+  visible, instead of cancelling switching
 * Fixed copyright notices
 
 ## v0.3.1 (2017-10-17)

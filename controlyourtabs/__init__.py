@@ -445,6 +445,10 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		elif is_control_tab or is_control_page:
 			self.switch_tab(is_control_tab, keyinfo.is_next_key(event), event.time)
 
+		elif self._is_switching and not self._is_tabwin_visible:
+			self.end_switching()
+			block_event = False
+
 		else:
 			block_event = self._is_switching
 
