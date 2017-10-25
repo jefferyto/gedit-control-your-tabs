@@ -42,7 +42,7 @@ except:
 
 try:
 	debug_plugin_message = Gedit.debug_plugin_message
-except: # before 3.4
+except: # before gedit 3.4
 	debug_plugin_message = lambda fmt, *fmt_args: None
 
 
@@ -50,7 +50,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
 	__gtype_name__ = 'ControlYourTabsWindowActivatable'
 
-	window = GObject.property(type=Gedit.Window) # lowercase 'p' for gedit < 3.4
+	window = GObject.property(type=Gedit.Window) # before pygobject 3.2, lowercase 'p'
 
 	MAX_TAB_WINDOW_ROWS = 9
 
@@ -119,7 +119,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		except AttributeError:
 			is_side_panel_stack = False
 		else:
-			is_side_panel_stack = isinstance(window.get_side_panel(), GtkStack) # since 3.12
+			is_side_panel_stack = isinstance(window.get_side_panel(), GtkStack) # since gedit 3.12
 
 		if log.query(log.DEBUG):
 			debug_plugin_message(log.format("using %s tab names/icons", "current" if is_side_panel_stack else "pre-3.12"))
@@ -693,7 +693,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		# this feels like a giant hack
 		try:
 			resize_id = GLib.idle_add(self.do_tabwin_resize)
-		except TypeError: # gedit 3.0
+		except TypeError: # before pygobject 3.0
 			resize_id = GObject.idle_add(self.do_tabwin_resize)
 
 		self._tabwin_resize_id = resize_id
@@ -766,7 +766,7 @@ class ControlYourTabsTabModel(GObject.Object):
 
 	__gtype_name__ = 'ControlYourTabsTabModel'
 
-	__gsignals__ = { # gedit < 3.6
+	__gsignals__ = { # before pygobject 3.4
 		'row-inserted': (GObject.SignalFlags.RUN_FIRST, None, (Gtk.TreePath,)),
 		'row-deleted': (GObject.SignalFlags.RUN_FIRST, None, (Gtk.TreePath,)),
 		'row-changed': (GObject.SignalFlags.RUN_FIRST, None, (Gtk.TreePath,)),
@@ -831,7 +831,9 @@ class ControlYourTabsTabModel(GObject.Object):
 			self._selected = None
 
 		del self._references[tab]
-		del self._model[key]
+
+		# before pygobject 3.2, cannot del model[path]
+		self._model.remove(self._model.get_iter(key))
 
 	def __iter__(self):
 		return [row[2] for row in self._model]
@@ -910,7 +912,7 @@ class ControlYourTabsTabModel(GObject.Object):
 		if log.query(log.INFO):
 			debug_plugin_message(log.format("%s, %s", self, tab))
 
-		self.insert(len(self._model), tab) # before 3.4, -1 position does not work
+		self.insert(len(self._model), tab) # before pygobject 3.2, -1 position does not work
 
 	def prepend(self, tab):
 		if log.query(log.INFO):
@@ -1031,7 +1033,7 @@ class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 
 
 # this is a /hack/
-# can do window.get_template_child(Gedit.Window, 'multi_notebook') since 3.12
+# can do window.get_template_child(Gedit.Window, 'multi_notebook') since gedit 3.12
 def get_multi_notebook(tab):
 	if log.query(log.INFO):
 		debug_plugin_message(log.format("%s", tab))
@@ -1059,7 +1061,7 @@ def get_settings():
 			False
 		)
 
-	except AttributeError: # before 3.4
+	except AttributeError: # before gedit 3.4
 		if log.query(log.DEBUG):
 			debug_plugin_message(log.format("relocatable schemas not supported"))
 

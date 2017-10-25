@@ -36,7 +36,7 @@ except:
 
 try:
 	debug_plugin_message = Gedit.debug_plugin_message
-except: # before 3.4
+except: # before gedit 3.4
 	debug_plugin_message = lambda fmt, *fmt_args: None
 
 
@@ -68,7 +68,7 @@ def get_tab_name(tab):
 		file = doc.get_file()
 		is_readonly = GtkSource.File.is_readonly(file)
 	except AttributeError:
-		is_readonly = doc.get_readonly() # deprecated since 3.18
+		is_readonly = doc.get_readonly() # deprecated since gedit 3.18
 
 	if is_readonly:
 		tab_name += " [%s]" % escape(_("Read-Only"))

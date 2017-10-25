@@ -24,7 +24,7 @@ from . import log
 
 try:
 	debug_plugin_message = Gedit.debug_plugin_message
-except: # before 3.4
+except: # before gedit 3.4
 	debug_plugin_message = lambda fmt, *fmt_args: None
 
 
