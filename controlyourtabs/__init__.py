@@ -890,7 +890,7 @@ class ControlYourTabsTabModel(GObject.Object):
 		return self._references[tab].get_path()
 
 	def index(self, tab):
-		return int(self.get_path(tab).to_string())
+		return int(str(self.get_path(tab)))
 
 	def _get_iter(self, tab):
 		return self._model.get_iter(self.get_path(tab))
