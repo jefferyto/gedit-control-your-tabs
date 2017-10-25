@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+* Added Ctrl-Esc to cancel tab switching, causes the initial tab (before
+  switching began) to be active again
+* Prevent all input during tab switching instead of cancelling switching
+* Fixed (potentially) affecting the translations of other plugins
+
 ## v0.3.1 (2017-10-17)
 * Show a debug message if the settings schema could not be loaded
 * Fixed division by zero error

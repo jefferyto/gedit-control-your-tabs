@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-	<schema id="com.thingsthemselves.gedit.plugins.controlyourtabs" path="/com/thingsthemselves/gedit/plugins/controlyourtabs/">
+	<schema id="com.thingsthemselves.gedit.plugins.controlyourtabs" gettext-domain="gedit-control-your-tabs">
 		<key name="use-tabbar-order" type="b">
 			<default>false</default>
 			<summary>Use tabbar order</summary>

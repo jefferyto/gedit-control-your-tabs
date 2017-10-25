@@ -32,6 +32,9 @@ gedit 2 is [v0.1.2][].
 *   <kbd>Ctrl</kbd>+<kbd>Page Up</kbd> /
     <kbd>Ctrl</kbd>+<kbd>Page Down</kbd> - Switch tabs in tabbar order.
 
+Hold down <kbd>Ctrl</kbd> to continue tab switching. Press
+<kbd>Esc</kbd> while switching to cancel and return to the initial tab.
+
 ## Preferences
 
 In gedit 3.4 or later, the plugin supports these preferences:
