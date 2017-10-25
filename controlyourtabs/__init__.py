@@ -28,7 +28,7 @@ import os.path
 from functools import wraps
 from gi.repository import GObject, GLib, Gtk, Gdk, GdkPixbuf, Gio, Gedit, PeasGtk
 from .utils import connect_handlers, disconnect_handlers
-from . import keyinfo, tabinfo, tabinfo_pre312
+from . import keyinfo, log, tabinfo, tabinfo_pre312
 
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 LOCALE_PATH = os.path.join(BASE_PATH, 'locale')
@@ -61,6 +61,9 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		GObject.Object.__init__(self)
 
 	def do_activate(self):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", self.window))
+
 		window = self.window
 		tab_models = {}
 
@@ -118,6 +121,9 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		else:
 			is_side_panel_stack = isinstance(window.get_side_panel(), GtkStack) # since 3.12
 
+		if log.query(log.DEBUG):
+			debug_plugin_message(log.format("using %s tab names/icons", "current" if is_side_panel_stack else "pre-3.12"))
+
 		self._is_switching = False
 		self._is_tabwin_visible = False
 		self._is_control_held = keyinfo.default_control_held()
@@ -136,15 +142,24 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		tab = window.get_active_tab()
 
 		if tab:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("found active tab %s, setting up now", tab))
+
 			self.setup(window, tab, tab_models)
 
 			if self._multi:
 				self.active_tab_changed(tab, tab_models[tab.get_parent()])
 
 		else:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("waiting for new tab"))
+
 			connect_handlers(self, window, ['tab-added'], 'setup', tab_models)
 
 	def do_deactivate(self):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", self.window))
+
 		multi = self._multi
 		tab_models = self._tab_models
 
@@ -183,11 +198,17 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 	# plugin setup
 
 	def on_setup_tab_added(self, window, tab, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", window, tab))
+
 		disconnect_handlers(self, window)
 
 		self.setup(window, tab, tab_models)
 
 	def setup(self, window, tab, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", window, tab))
+
 		icon_size = self._tabinfo.get_tab_icon_size(tab)
 
 		self._icon_cell.set_fixed_size(icon_size, icon_size)
@@ -196,7 +217,8 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		multi = get_multi_notebook(tab)
 
 		if not multi:
-			debug_plugin_message("cannot find multi notebook from %s", tab)
+			if log.query(log.ERROR):
+				debug_plugin_message(log.format("cannot find multi notebook from %s", tab))
 
 			return
 
@@ -235,7 +257,13 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 	# tracking notebooks / tabs
 
 	def track_notebook(self, notebook, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, notebook))
+
 		if notebook in tab_models:
+			if log.query(log.WARNING):
+				debug_plugin_message(log.format("already tracking notebook"))
+
 			return
 
 		tab_model = ControlYourTabsTabModel(self._tabinfo)
@@ -263,7 +291,13 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 			self.track_tab(tab, tab_model)
 
 	def untrack_notebook(self, notebook, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, notebook))
+
 		if notebook not in tab_models:
+			if log.query(log.WARNING):
+				debug_plugin_message(log.format("not tracking notebook"))
+
 			return
 
 		tab_model = tab_models[notebook]
@@ -279,7 +313,13 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		del tab_models[notebook]
 
 	def track_tab(self, tab, tab_model):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, tab))
+
 		if tab in tab_model:
+			if log.query(log.WARNING):
+				debug_plugin_message(log.format("already tracking tab"))
+
 			return
 
 		tab_model.append(tab)
@@ -295,10 +335,19 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		)
 
 	def untrack_tab(self, tab, tab_model):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, tab))
+
 		if tab == self._initial_tab:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("tab is initial tab, clearing"))
+
 			self._initial_tab = None
 
 		if tab not in tab_model:
+			if log.query(log.WARNING):
+				debug_plugin_message(log.format("not tracking tab"))
+
 			return
 
 		disconnect_handlers(self, tab)
@@ -306,11 +355,10 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		tab_model.remove(tab)
 
 	def active_tab_changed(self, tab, tab_model):
-		if not self._is_switching:
-			if tab not in tab_model:
-				# can this happen?
-				self.track_tab(tab, tab_model)
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, tab))
 
+		if not self._is_switching:
 			tab_model.move_after(tab)
 
 		tab_model.select(tab)
@@ -323,18 +371,33 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 	# signal handlers
 
 	def on_multi_notebook_notebook_added(self, multi, notebook, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, notebook))
+
 		self.track_notebook(notebook, tab_models)
 
 	def on_multi_notebook_notebook_removed(self, multi, notebook, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, notebook))
+
 		self.untrack_notebook(notebook, tab_models)
 
 	def on_multi_notebook_tab_added(self, multi, notebook, tab, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s, %s", self.window, notebook, tab))
+
 		self.track_tab(tab, tab_models[notebook])
 
 	def on_multi_notebook_tab_removed(self, multi, notebook, tab, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s, %s", self.window, notebook, tab))
+
 		self.untrack_tab(tab, tab_models[notebook])
 
 	def on_window_tabs_reordered(self, window, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", window))
+
 		# XXX reordering tabs doesn't necessarily involve the active tab
 		# and reordering only happens within a notebook, not across notebooks
 		# ...
@@ -345,6 +408,9 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		tab_model = tab_models[new_notebook]
 
 		if tab in tab_model:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("active tab did not change notebooks"))
+
 			return
 
 		old_notebook = None
@@ -356,44 +422,84 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 				break
 
 		if old_notebook:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("untracking tab from old notebook %s", old_notebook))
+
 			self.untrack_tab(tab, tab_models[old_notebook])
+
+		if log.query(log.DEBUG):
+			debug_plugin_message(log.format("tracking tab in new notebook %s", new_notebook))
 
 		self.track_tab(tab, tab_models[new_notebook])
 
 	def on_window_active_tab_changed(self, window, tab, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", window, tab))
+
 		self.active_tab_changed(tab, tab_models[tab.get_parent()])
 
 	def on_window_key_press_event(self, window, event, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, key=%s", window, Gdk.keyval_name(event.keyval)))
+
 		self._is_control_held = keyinfo.update_control_held(event, self._is_control_held, True)
 
 		return self.key_press_event(event)
 
 	def on_window_key_release_event(self, window, event, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, key=%s", self.window, Gdk.keyval_name(event.keyval)))
+
 		self._is_control_held = keyinfo.update_control_held(event, self._is_control_held, False)
 
 		if not any(self._is_control_held):
+			if log.query(log.INFO):
+				debug_plugin_message(log.format("no control keys held down"))
+
 			self.end_switching()
 
+		else:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("one or more control keys held down"))
+
 	def on_window_focus_out_event(self, window, event, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", window))
+
 		self.end_switching()
 
 	def on_window_configure_event(self, window, event, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", window))
+
 		self.schedule_tabwin_resize()
 
 	def on_tab_notify_name_state(self, tab, pspec, tab_model):
-		if tab not in tab_model:
-			return
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, tab))
 
 		tab_model.update(tab)
 
 	def on_tab_model_row_changed(self, tab_model, path):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, path=%s", self.window, path))
+
 		if not self.is_active_view_model(tab_model):
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("tab model not active"))
+
 			return
 
 		self.schedule_tabwin_resize()
 
 	def on_tab_model_selected_path_changed(self, tab_model, path):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, path=%s", self.window, path))
+
 		if not self.is_active_view_model(tab_model):
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("tab model not active"))
+
 			return
 
 		self.set_view_selection(path)
@@ -406,6 +512,9 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		return self._view.get_model() is model
 
 	def set_active_view_model(self, tab_model):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, tab_model))
+
 		model = None
 		selected_path = None
 
@@ -417,6 +526,9 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		self.set_view_selection(selected_path)
 
 	def set_view_selection(self, path):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, path=%s", self.window, path))
+
 		view = self._view
 		selection = view.get_selection()
 
@@ -431,34 +543,58 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 	# tab switching
 
 	def key_press_event(self, event):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, key=%s", self.window, Gdk.keyval_name(event.keyval)))
+
 		settings = self._settings
 		is_control_tab, is_control_page, is_control_escape = keyinfo.is_control_keys(event)
 		block_event = True
 
 		if is_control_tab and settings and settings['use-tabbar-order']:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("coercing ctrl-tab into ctrl-page because of settings"))
+
 			is_control_tab = False
 			is_control_page = True
 
 		if self._is_switching and is_control_escape:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("ctrl-esc while switching"))
+
 			self.end_switching(True)
 
 		elif is_control_tab or is_control_page:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("ctrl-tab or ctrl-page"))
+
 			self.switch_tab(is_control_tab, keyinfo.is_next_key(event), event.time)
 
 		elif self._is_switching and not self._is_tabwin_visible:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("normal key while switching and tabwin not visible"))
+
 			self.end_switching()
 			block_event = False
 
 		else:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("normal key while %s", "switching" if self._is_switching else "not switching"))
+
 			block_event = self._is_switching
 
 		return block_event
 
 	def switch_tab(self, use_mru_order, to_next_tab, time):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, use_mru_order=%s, to_next_tab=%s, time=%s", self.window, use_mru_order, to_next_tab, time))
+
 		window = self.window
 		current_tab = window.get_active_tab()
 
 		if not current_tab:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("no tabs"))
+
 			return
 
 		notebook = current_tab.get_parent()
@@ -466,7 +602,10 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		tabs = self._tab_models[notebook] if use_mru_order else notebook.get_children()
 		num_tabs = len(tabs)
 
-		if num_tabs < 2 or current_tab not in tabs:
+		if num_tabs < 2:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("only 1 tab"))
+
 			return
 
 		current_index = tabs.index(current_tab)
@@ -475,7 +614,13 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
 		next_tab = tabs[next_index]
 
+		if log.query(log.DEBUG):
+			debug_plugin_message(log.format("switching from %s to %s", current_tab, next_tab))
+
 		if not self._is_switching:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("saving %s as initial tab", current_tab))
+
 			self._initial_tab = current_tab
 
 		self._is_switching = True
@@ -486,15 +631,27 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 			tabwin = self._tabwin
 
 			if not self._is_tabwin_visible:
+				if log.query(log.DEBUG):
+					debug_plugin_message(log.format("showing tabwin"))
+
 				tabwin.show_all()
 
 			else:
+				if log.query(log.DEBUG):
+					debug_plugin_message(log.format("presenting tabwin"))
+
 				tabwin.present_with_time(time)
 
 			self._is_tabwin_visible = True
 
 	def end_switching(self, do_revert=False):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, do_revert=%s", self.window, do_revert))
+
 		if not self._is_switching:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("not switching"))
+
 			return
 
 		window = self.window
@@ -507,6 +664,9 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		self._initial_tab = None
 
 		if do_revert and initial_tab:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("switching to initial tab %s", initial_tab))
+
 			window.set_active_tab(initial_tab)
 
 		else:
@@ -519,7 +679,13 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 	# tab window resizing
 
 	def schedule_tabwin_resize(self):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", self.window))
+
 		if self._tabwin_resize_id:
+			if log.query(log.INFO):
+				debug_plugin_message(log.format("already scheduled"))
+
 			return
 
 		# need to wait a little before asking the treeview for its preferred size
@@ -533,7 +699,13 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		self._tabwin_resize_id = resize_id
 
 	def cancel_tabwin_resize(self):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", self.window))
+
 		if not self._tabwin_resize_id:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("not scheduled"))
+
 			return
 
 		GLib.source_remove(self._tabwin_resize_id)
@@ -541,6 +713,9 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		self._tabwin_resize_id = None
 
 	def do_tabwin_resize(self):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", self.window))
+
 		view = self._view
 		sw = self._sw
 
@@ -572,6 +747,13 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
 		tabwin_width = max(sw_min_size.width, sw_nat_size.width)
 		tabwin_height = min(view_height, max_height)
+
+		if log.query(log.DEBUG):
+			debug_plugin_message(log.format("view height     = %s", view_height))
+			debug_plugin_message(log.format("max rows height = %s", max_rows_height))
+			debug_plugin_message(log.format("max win height  = %s", max_win_height))
+			debug_plugin_message(log.format("tabwin height   = %s", tabwin_height))
+			debug_plugin_message(log.format("tabwin width = %s", tabwin_width))
 
 		self._tabwin.set_size_request(tabwin_width, tabwin_height)
 
@@ -739,9 +921,15 @@ class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 
 
 	def do_create_configure_widget(self):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format(""))
+
 		settings = get_settings()
 
 		if settings:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("have settings"))
+
 			widget = Gtk.CheckButton.new_with_label(
 				_("Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab")
 			)
@@ -753,6 +941,9 @@ class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 			)
 
 		else:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("no settings"))
+
 			label = Gtk.Label.new(
 				_("Sorry, no preferences are available for this version of gedit.")
 			)
@@ -770,6 +961,9 @@ class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 # this is a /hack/
 # can do window.get_template_child(Gedit.Window, 'multi_notebook') since 3.12
 def get_multi_notebook(tab):
+	if log.query(log.INFO):
+		debug_plugin_message(log.format("%s", tab))
+
 	widget = tab.get_parent()
 
 	while widget:
@@ -781,6 +975,9 @@ def get_multi_notebook(tab):
 	return widget
 
 def get_settings():
+	if log.query(log.INFO):
+		debug_plugin_message(log.format(""))
+
 	schemas_path = os.path.join(BASE_PATH, 'schemas')
 
 	try:
@@ -790,17 +987,22 @@ def get_settings():
 			False
 		)
 
-	except AttributeError: # gedit < 3.4
-		debug_plugin_message("relocatable schemas not supported")
+	except AttributeError: # before 3.4
+		if log.query(log.DEBUG):
+			debug_plugin_message(log.format("relocatable schemas not supported"))
 
 		schema_source = None
 
 	except:
-		debug_plugin_message("could not load settings schema source from %s", schemas_path)
+		if log.query(log.WARNING):
+			debug_plugin_message(log.format("could not load settings schema source from %s", schemas_path))
 
 		schema_source = None
 
 	if not schema_source:
+		if log.query(log.DEBUG):
+			debug_plugin_message(log.format("no schema source"))
+
 		return None
 
 	schema = schema_source.lookup(
@@ -809,6 +1011,9 @@ def get_settings():
 	)
 
 	if not schema:
+		if log.query(log.WARNING):
+			debug_plugin_message(log.format("could not lookup schema"))
+
 		return None
 
 	return Gio.Settings.new_full(

@@ -19,7 +19,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, Gedit
+from . import log
+
+try:
+	debug_plugin_message = Gedit.debug_plugin_message
+except: # before 3.4
+	debug_plugin_message = lambda fmt, *fmt_args: None
 
 
 CONTROL_MASK = Gdk.ModifierType.CONTROL_MASK
@@ -43,14 +49,25 @@ def default_control_held():
 def update_control_held(event, prev_statuses, new_status):
 	keyval = event.keyval
 
-	return [
+	if log.query(log.INFO):
+		debug_plugin_message(log.format("key=%s, %s, new_status=%s", Gdk.keyval_name(keyval), prev_statuses, new_status))
+
+	new_statuses = [
 		new_status if keyval == control_key else prev_status
 		for control_key, prev_status in zip(CONTROL_KEY_LIST, prev_statuses)
 	]
 
+	if log.query(log.DEBUG):
+		debug_plugin_message(log.format("new_statuses=%s", new_statuses))
+
+	return new_statuses
+
 def is_control_keys(event):
 	keyval = event.keyval
 	state = event.state & Gtk.accelerator_get_default_mod_mask()
+
+	if log.query(log.INFO):
+		debug_plugin_message(log.format("key=%s, state=%s", Gdk.keyval_name(keyval), state))
 
 	is_control = state == CONTROL_MASK
 	is_control_shift = state == CONTROL_SHIFT_MASK
@@ -63,8 +80,19 @@ def is_control_keys(event):
 	is_control_page = is_control and is_page
 	is_control_escape = (is_control or is_control_shift) and is_escape
 
+	if log.query(log.DEBUG):
+		debug_plugin_message(log.format("is_control_tab=%s, is_control_page=%s, is_control_escape=%s", is_control_tab, is_control_page, is_control_escape))
+
 	return (is_control_tab, is_control_page, is_control_escape)
 
 def is_next_key(event):
-	return event.keyval in NEXT_KEY_SET
+	if log.query(log.INFO):
+		debug_plugin_message(log.format("key=%s", Gdk.keyval_name(event.keyval)))
+
+	result = event.keyval in NEXT_KEY_SET
+
+	if log.query(log.DEBUG):
+		debug_plugin_message(log.format("result=%s", result))
+
+	return result
 
