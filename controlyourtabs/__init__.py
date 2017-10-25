@@ -828,7 +828,7 @@ class ControlYourTabsTabModel(GObject.Object):
 		del self._model[key]
 
 	def __iter__(self):
-		return [row[0] for row in self._model]
+		return [row[2] for row in self._model]
 
 	def __contains__(self, item):
 		return item in self._references
