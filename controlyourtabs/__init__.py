@@ -910,7 +910,7 @@ class ControlYourTabsTabModel(GObject.Object):
 		if log.query(log.INFO):
 			debug_plugin_message(log.format("%s, %s", self, tab))
 
-		self.insert(-1, tab)
+		self.insert(len(self._model), tab) # before 3.4, -1 position does not work
 
 	def prepend(self, tab):
 		if log.query(log.INFO):
