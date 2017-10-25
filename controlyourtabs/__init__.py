@@ -236,7 +236,6 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		connect_handlers(
 			self, window,
 			[
-				'tabs-reordered',
 				'active-tab-changed',
 				'key-press-event',
 				'key-release-event',
@@ -393,44 +392,6 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 			debug_plugin_message(log.format("%s, %s, %s", self.window, notebook, tab))
 
 		self.untrack_tab(tab, tab_models[notebook])
-
-	def on_window_tabs_reordered(self, window, tab_models):
-		if log.query(log.INFO):
-			debug_plugin_message(log.format("%s", window))
-
-		# XXX reordering tabs doesn't necessarily involve the active tab
-		# and reordering only happens within a notebook, not across notebooks
-		# ...
-		multi = self._multi
-		tab = window.get_active_tab()
-		new_notebook = tab.get_parent()
-
-		tab_model = tab_models[new_notebook]
-
-		if tab in tab_model:
-			if log.query(log.DEBUG):
-				debug_plugin_message(log.format("active tab did not change notebooks"))
-
-			return
-
-		old_notebook = None
-
-		for notebook in tab_models:
-			tab_model = tab_models[notebook]
-			if tab in tab_model:
-				old_notebook = notebook
-				break
-
-		if old_notebook:
-			if log.query(log.DEBUG):
-				debug_plugin_message(log.format("untracking tab from old notebook %s", old_notebook))
-
-			self.untrack_tab(tab, tab_models[old_notebook])
-
-		if log.query(log.DEBUG):
-			debug_plugin_message(log.format("tracking tab in new notebook %s", new_notebook))
-
-		self.track_tab(tab, tab_models[new_notebook])
 
 	def on_window_active_tab_changed(self, window, tab, tab_models):
 		if log.query(log.INFO):
