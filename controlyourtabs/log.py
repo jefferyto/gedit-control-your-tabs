@@ -53,7 +53,7 @@ name = os.getenv('GEDIT_CONTROL_YOUR_TABS_DEBUG_LEVEL', '').lower()
 if name in NAMES_TO_LEVELS:
 	output_level = NAMES_TO_LEVELS[name]
 
-# set by query(), used by prefix()
+# set by query(), used by name()
 last_queried_level = None
 
 
@@ -97,14 +97,13 @@ def query(log_level):
 
 	return highest(log_level) <= output_level
 
-def prefix(log_level=None):
+def name(log_level=None):
 	if log_level is None:
 		log_level = last_queried_level
 
-	name = LEVELS_TO_NAMES[highest(log_level)] if log_level is not None else 'unknown'
-
-	return '[' + name + '] '
+	return LEVELS_TO_NAMES[highest(log_level)] if log_level is not None else 'unknown'
 
 def format(message, *args):
-	return prefix() + (message % tuple(debug_str(arg) for arg in args))
+	msg = message % tuple(debug_str(arg) for arg in args)
+	return '[%s] %s' % (name(), msg)
 
