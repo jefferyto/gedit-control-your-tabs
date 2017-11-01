@@ -683,9 +683,12 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		view_min_size, view_nat_size = view.get_preferred_size()
 		view_height = max(view_min_size.height, view_nat_size.height)
 
-		num_rows = max(len(view.get_model()), 2)
-		row_height = math.ceil(view_height / num_rows)
-		max_rows_height = self.MAX_TAB_WINDOW_ROWS * row_height
+		num_rows = len(view.get_model())
+		if num_rows:
+			row_height = math.ceil(view_height / num_rows)
+			max_rows_height = self.MAX_TAB_WINDOW_ROWS * row_height
+		else:
+			max_rows_height = float('inf')
 
 		win_width, win_height = self.window.get_size()
 		max_win_height = round(self.MAX_TAB_WINDOW_HEIGHT_PERCENTAGE * win_height)
