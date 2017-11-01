@@ -105,5 +105,5 @@ def name(log_level=None):
 
 def format(message, *args):
 	msg = message % tuple(debug_str(arg) for arg in args)
-	return '[%s] %s' % (name(), msg)
+	return "[%s] %s" % (name(), msg)
 
