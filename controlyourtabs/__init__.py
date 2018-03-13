@@ -978,22 +978,21 @@ class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 				Gio.SettingsBindFlags.DEFAULT
 			)
 
+			widget._settings = settings
+
 		else:
 			if log.query(log.DEBUG):
 				debug_plugin_message(log.format("no settings"))
 
-			label = Gtk.Label.new(
+			widget = Gtk.Label.new(
 				_("Sorry, no preferences are available for this version of gedit.")
 			)
 
-			widget = Gtk.Box.new(Gtk.Orientation.VERTICAL, 0)
-			widget.add(label)
+		box = Gtk.Box.new(Gtk.Orientation.VERTICAL, 0)
+		box.set_border_width(5)
+		box.add(widget)
 
-		widget.set_border_width(5)
-
-		widget._settings = settings
-
-		return widget
+		return box
 
 
 # this is a /hack/
