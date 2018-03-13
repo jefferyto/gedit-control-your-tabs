@@ -3,7 +3,7 @@
 Switch between document tabs using Ctrl+Tab / Ctrl+Shift+Tab and
 Ctrl+PageUp / Ctrl+PageDown  
 <https://github.com/jefferyto/gedit-control-your-tabs>  
-v0.3.1
+v0.3.2
 
 All bug reports, feature requests and miscellaneous comments are welcome
 at the [project issue tracker][].
@@ -30,16 +30,19 @@ gedit 2 is [v0.1.2][].
     <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> - Switch tabs in
     most recently used order.
 *   <kbd>Ctrl</kbd>+<kbd>Page Up</kbd> /
-    <kbd>Ctrl</kbd>+<kbd>Page Down</kbd> - Switch tabs in tabbar order.
+    <kbd>Ctrl</kbd>+<kbd>Page Down</kbd> - Switch tabs in tab row order.
+
+Hold down <kbd>Ctrl</kbd> to continue tab switching. Press
+<kbd>Esc</kbd> while switching to cancel and return to the initial tab.
 
 ## Preferences
 
 In gedit 3.4 or later, the plugin supports these preferences:
 
-*   `Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab` - Change
+*   `Use tab row order for Ctrl+Tab / Ctrl+Shift+Tab` - Change
     <kbd>Ctrl</kbd>+<kbd>Tab</kbd> /
     <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> to switch tabs in
-    tabbar order instead of most recently used order.
+    tab row order instead of most recently used order.
 
 ## Development
 
@@ -57,7 +60,7 @@ Inspired by:
 
 ## License
 
-Copyright &copy; 2010-2014, 2016-2017 Jeffery To <jeffery.to@gmail.com>
+Copyright &copy; 2010-2013, 2017-2018 Jeffery To <jeffery.to@gmail.com>
 
 Available under GNU General Public License version 3
 

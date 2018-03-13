@@ -3,7 +3,7 @@
 # __init__.py
 # This file is part of Control Your Tabs, a plugin for gedit
 #
-# Copyright (C) 2010-2014, 2016-2017 Jeffery To <jeffery.to@gmail.com>
+# Copyright (C) 2010-2013, 2017-2018 Jeffery To <jeffery.to@gmail.com>
 # https://github.com/jefferyto/gedit-control-your-tabs
 #
 # This program is free software: you can redistribute it and/or modify
@@ -23,100 +23,51 @@ import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gedit', '3.0')
 
-import gettext
 import math
 import os.path
-from gi.repository import GObject, GLib, Gtk, Gdk, GdkPixbuf, Gio, GtkSource, Gedit, PeasGtk
-from xml.sax.saxutils import escape
+from functools import wraps
+from gi.repository import GObject, GLib, Gtk, Gdk, GdkPixbuf, Gio, Gedit, PeasGtk
 from .utils import connect_handlers, disconnect_handlers
+from . import keyinfo, log, tabinfo, tabinfo_pre312
 
-GETTEXT_PACKAGE = 'gedit-control-your-tabs'
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 LOCALE_PATH = os.path.join(BASE_PATH, 'locale')
 
 try:
-	gettext.bindtextdomain(GETTEXT_PACKAGE, LOCALE_PATH)
-	_ = lambda s: gettext.dgettext(GETTEXT_PACKAGE, s);
+	import gettext
+	gettext.bindtextdomain('gedit-control-your-tabs', LOCALE_PATH)
+	_ = lambda s: gettext.dgettext('gedit-control-your-tabs', s)
 except:
 	_ = lambda s: s
 
+try:
+	debug_plugin_message = Gedit.debug_plugin_message
+except: # before gedit 3.4
+	debug_plugin_message = lambda fmt, *fmt_args: None
 
-class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Configurable):
-	__gtype_name__ = 'ControlYourTabsPlugin'
 
-	window = GObject.property(type=Gedit.Window)
+class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
-	SELECTED_TAB_COLUMN = 3
+	__gtype_name__ = 'ControlYourTabsWindowActivatable'
 
-	META_KEYS = ['Shift_L', 'Shift_R',
-	             'Control_L', 'Control_R',
-	             'Meta_L', 'Meta_R',
-	             'Super_L', 'Super_R',
-	             'Hyper_L', 'Hyper_R',
-	             'Alt_L', 'Alt_R']
-	             # Compose, Apple?
+	window = GObject.property(type=Gedit.Window) # before pygobject 3.2, lowercase 'p'
 
 	MAX_TAB_WINDOW_ROWS = 9
 
 	MAX_TAB_WINDOW_HEIGHT_PERCENTAGE = 0.5
 
-	# based on MAX_DOC_NAME_LENGTH in gedit-documents-panel.c
-	MAX_DOC_NAME_LENGTH = 60
-
-	# based on formats in tab_get_name() in gedit-documents-panel.c < 3.12
-	TAB_NAME_GEDITPANEL_FORMATS = {
-		'modified': "<i>%s</i>",
-		'readonly': " [<i>%s</i>]"
-	}
-
-	# based on formats in document_row_sync_tab_name_and_icon() in gedit-documents-panel.c >= 3.12
-	TAB_NAME_LISTBOX_FORMATS = {
-		'modified': "<b>%s</b>",
-		'readonly': " [%s]"
-	}
-
-	# based on switch statement in _gedit_tab_get_icon() in gedit-tab.c < 3.12
-	TAB_STATE_TO_STOCK_ICON = {
-		Gedit.TabState.STATE_LOADING: Gtk.STOCK_OPEN,
-		Gedit.TabState.STATE_REVERTING: Gtk.STOCK_REVERT_TO_SAVED,
-		Gedit.TabState.STATE_SAVING: Gtk.STOCK_SAVE,
-		Gedit.TabState.STATE_PRINTING: Gtk.STOCK_PRINT,
-		Gedit.TabState.STATE_PRINT_PREVIEWING: Gtk.STOCK_PRINT_PREVIEW,
-		Gedit.TabState.STATE_SHOWING_PRINT_PREVIEW: Gtk.STOCK_PRINT_PREVIEW,
-		Gedit.TabState.STATE_LOADING_ERROR: Gtk.STOCK_DIALOG_ERROR,
-		Gedit.TabState.STATE_REVERTING_ERROR: Gtk.STOCK_DIALOG_ERROR,
-		Gedit.TabState.STATE_SAVING_ERROR: Gtk.STOCK_DIALOG_ERROR,
-		Gedit.TabState.STATE_GENERIC_ERROR: Gtk.STOCK_DIALOG_ERROR,
-		Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION: Gtk.STOCK_DIALOG_WARNING
-	}
-
-	# based on switch statement in _gedit_tab_get_icon() in gedit-tab.c >= 3.12
-	TAB_STATE_TO_NAMED_ICON = {
-		Gedit.TabState.STATE_PRINTING: 'printer-printing-symbolic',
-		Gedit.TabState.STATE_PRINT_PREVIEWING: 'printer-symbolic',
-		Gedit.TabState.STATE_SHOWING_PRINT_PREVIEW: 'printer-symbolic',
-		Gedit.TabState.STATE_LOADING_ERROR: 'dialog-error-symbolic',
-		Gedit.TabState.STATE_REVERTING_ERROR: 'dialog-error-symbolic',
-		Gedit.TabState.STATE_SAVING_ERROR: 'dialog-error-symbolic',
-		Gedit.TabState.STATE_GENERIC_ERROR: 'dialog-error-symbolic',
-		Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION: 'dialog-warning-symbolic'
-	}
-
-	SETTINGS_SCHEMA_ID = 'com.thingsthemselves.gedit.plugins.controlyourtabs'
-
-	USE_TABBAR_ORDER = 'use-tabbar-order'
-
-
-	# gedit plugin api
 
 	def __init__(self):
 		GObject.Object.__init__(self)
 
 	def do_activate(self):
-		window = self.window
-		notebooks = {}
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", self.window))
 
-		tabwin = Gtk.Window(type=Gtk.WindowType.POPUP)
+		window = self.window
+		tab_models = {}
+
+		tabwin = Gtk.Window.new(Gtk.WindowType.POPUP)
 		tabwin.set_transient_for(window)
 		tabwin.set_destroy_with_parent(True)
 		tabwin.set_accept_focus(False)
@@ -127,25 +78,26 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		tabwin.set_skip_taskbar_hint(False)
 		tabwin.set_skip_pager_hint(False)
 
-		sw = Gtk.ScrolledWindow()
+		sw = Gtk.ScrolledWindow.new(None, None)
 		sw.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
 		sw.show()
 
 		tabwin.add(sw)
 
-		view = Gtk.TreeView()
+		view = Gtk.TreeView.new()
 		view.set_enable_search(False)
 		view.set_headers_visible(False)
 		view.show()
 
 		sw.add(view)
 
-		col = Gtk.TreeViewColumn(_("Documents"))
+		col = Gtk.TreeViewColumn.new()
+		col.set_title(_("Documents"))
 		col.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
 
-		icon_cell = Gtk.CellRendererPixbuf()
-		name_cell = Gtk.CellRendererText()
-		space_cell = Gtk.CellRendererPixbuf()
+		icon_cell = Gtk.CellRendererPixbuf.new()
+		name_cell = Gtk.CellRendererText.new()
+		space_cell = Gtk.CellRendererPixbuf.new()
 
 		col.pack_start(icon_cell, False)
 		col.pack_start(name_cell, True)
@@ -167,59 +119,69 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		except AttributeError:
 			is_side_panel_stack = False
 		else:
-			is_side_panel_stack = isinstance(window.get_side_panel(), GtkStack) # since 3.12
+			is_side_panel_stack = isinstance(window.get_side_panel(), GtkStack) # since gedit 3.12
 
-		self._tabbing = False
-		self._paging = False
-		self._switching = False
-		self._ctrl_l = False
-		self._ctrl_r = False
+		if log.query(log.DEBUG):
+			debug_plugin_message(log.format("using %s tab names/icons", "current" if is_side_panel_stack else "pre-3.12"))
+
+		self._is_switching = False
+		self._is_tabwin_visible = False
+		self._is_control_held = keyinfo.default_control_held()
+		self._initial_tab = None
 		self._multi = None
-		self._notebooks = notebooks
+		self._tab_models = tab_models
 		self._tabwin = tabwin
 		self._view = view
 		self._sw = sw
 		self._icon_cell = icon_cell
 		self._space_cell = space_cell
 		self._tabwin_resize_id = None
-		self._settings = self._get_settings()
-		self._is_side_panel_stack = is_side_panel_stack
+		self._settings = get_settings()
+		self._tabinfo = tabinfo if is_side_panel_stack else tabinfo_pre312
 
 		tab = window.get_active_tab()
+
 		if tab:
-			self._setup(window, tab, notebooks, view)
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("found active tab %s, setting up now", tab))
+
+			self.setup(window, tab, tab_models)
+
 			if self._multi:
-				self.on_window_active_tab_changed(window, tab, notebooks, view)
+				self.active_tab_changed(tab, tab_models[tab.get_parent()])
+
 		else:
-			connect_handlers(self, window, ['tab-added'], 'window')
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("waiting for new tab"))
+
+			connect_handlers(self, window, ['tab-added'], 'setup', tab_models)
 
 	def do_deactivate(self):
-		window = self.window
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", self.window))
 
-		disconnect_handlers(self, window)
+		multi = self._multi
+		tab_models = self._tab_models
 
-		if self._multi:
-			disconnect_handlers(self, self._multi)
+		for notebook in list(tab_models.keys()):
+			self.untrack_notebook(notebook, tab_models)
 
-		notebooks = self._notebooks
-		for notebook in notebooks:
-			disconnect_handlers(self, notebooks[notebook][1])
+		if multi:
+			disconnect_handlers(self, multi)
 
-		for doc in window.get_documents():
-			disconnect_handlers(self, Gedit.Tab.get_from_document(doc))
+		disconnect_handlers(self, self.window)
 
-		self._cancel_tabwin_resize()
-		self._end_switching()
+		self.cancel_tabwin_resize()
+		self.end_switching()
 
 		self._tabwin.destroy()
 
-		self._tabbing = None
-		self._paging = None
-		self._switching = None
-		self._ctrl_l = None
-		self._ctrl_r = None
+		self._is_switching = None
+		self._is_tabwin_visible = None
+		self._is_control_held = None
+		self._initial_tab = None
 		self._multi = None
-		self._notebooks = None
+		self._tab_models = None
 		self._tabwin = None
 		self._view = None
 		self._sw = None
@@ -227,410 +189,506 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		self._space_cell = None
 		self._tabwin_resize_id = None
 		self._settings = None
-		self._is_side_panel_stack = None
+		self._tabinfo = None
 
 	def do_update_state(self):
 		pass
 
 
-	# settings ui
-
-	def do_create_configure_widget(self):
-		settings = self._get_settings()
-		if settings:
-			widget = Gtk.CheckButton(_("Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab"))
-			widget.set_active(settings.get_boolean(self.USE_TABBAR_ORDER))
-			connect_handlers(self, widget, ['toggled'], 'configure_check_button', settings)
-			connect_handlers(self, settings, ['changed::' + self.USE_TABBAR_ORDER], 'configure_settings', widget)
-		else:
-			widget = Gtk.Box()
-			widget.add(Gtk.Label(_("Sorry, no preferences are available for this version of gedit.")))
-		widget.set_border_width(5)
-		return widget
-
-	def on_configure_check_button_toggled(self, widget, settings):
-		settings.set_boolean(self.USE_TABBAR_ORDER, widget.get_active())
-
-	def on_configure_settings_changed_use_tabbar_order(self, settings, prop, widget):
-		widget.set_active(settings.get_boolean(self.USE_TABBAR_ORDER))
-
-
 	# plugin setup
 
-	def on_window_tab_added(self, window, tab):
+	def on_setup_tab_added(self, window, tab, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", window, tab))
+
 		disconnect_handlers(self, window)
-		self._setup(window, tab, self._notebooks, self._view)
 
-	def _setup(self, window, tab, notebooks, view):
-		if self._is_side_panel_stack:
-			is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup(Gtk.IconSize.MENU)
+		self.setup(window, tab, tab_models)
+
+	def setup(self, window, tab, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", window, tab))
+
+		icon_size = self._tabinfo.get_tab_icon_size(tab)
+
+		self._icon_cell.set_fixed_size(icon_size, icon_size)
+		self._space_cell.set_fixed_size(icon_size, icon_size)
+
+		multi = get_multi_notebook(tab)
+
+		if not multi:
+			if log.query(log.ERROR):
+				debug_plugin_message(log.format("cannot find multi notebook from %s", tab))
+
+			return
+
+		connect_handlers(
+			self, multi,
+			[
+				'notebook-added',
+				'notebook-removed',
+				'tab-added',
+				'tab-removed'
+			],
+			'multi_notebook',
+			tab_models
+		)
+		connect_handlers(
+			self, window,
+			[
+				'active-tab-changed',
+				'key-press-event',
+				'key-release-event',
+				'focus-out-event',
+				'configure-event'
+			],
+			'window',
+			tab_models
+		)
+
+		self._multi = multi
+
+		for document in window.get_documents():
+			notebook = Gedit.Tab.get_from_document(document).get_parent()
+			self.track_notebook(notebook, tab_models)
+
+
+	# tracking notebooks / tabs
+
+	def track_notebook(self, notebook, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, notebook))
+
+		if notebook in tab_models:
+			if log.query(log.WARNING):
+				debug_plugin_message(log.format("already tracking notebook"))
+
+			return
+
+		tab_model = ControlYourTabsTabModel(self._tabinfo)
+
+		connect_handlers(
+			self, tab_model,
+			[
+				'row-inserted',
+				'row-deleted',
+				'row-changed'
+			],
+			self.on_tab_model_row_changed
+		)
+		connect_handlers(
+			self, tab_model,
+			[
+				'selected-path-changed'
+			],
+			'tab_model'
+		)
+
+		tab_models[notebook] = tab_model
+
+		for tab in notebook.get_children():
+			self.track_tab(tab, tab_model)
+
+	def untrack_notebook(self, notebook, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, notebook))
+
+		if notebook not in tab_models:
+			if log.query(log.WARNING):
+				debug_plugin_message(log.format("not tracking notebook"))
+
+			return
+
+		tab_model = tab_models[notebook]
+
+		for tab in notebook.get_children():
+			self.untrack_tab(tab, tab_model)
+
+		if self.is_active_view_model(tab_model):
+			self.set_active_view_model(None)
+
+		disconnect_handlers(self, tab_model)
+
+		del tab_models[notebook]
+
+	def track_tab(self, tab, tab_model):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, tab))
+
+		if tab in tab_model:
+			if log.query(log.WARNING):
+				debug_plugin_message(log.format("already tracking tab"))
+
+			return
+
+		tab_model.append(tab)
+
+		connect_handlers(
+			self, tab,
+			[
+				'notify::name',
+				'notify::state'
+			],
+			self.on_tab_notify_name_state,
+			tab_model
+		)
+
+	def untrack_tab(self, tab, tab_model):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, tab))
+
+		if tab == self._initial_tab:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("tab is initial tab, clearing"))
+
+			self._initial_tab = None
+
+		if tab not in tab_model:
+			if log.query(log.WARNING):
+				debug_plugin_message(log.format("not tracking tab"))
+
+			return
+
+		disconnect_handlers(self, tab)
+
+		tab_model.remove(tab)
+
+	def active_tab_changed(self, tab, tab_model):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, tab))
+
+		if not self._is_switching:
+			tab_model.move_after(tab)
+
+		tab_model.select(tab)
+
+		if not self.is_active_view_model(tab_model):
+			self.set_active_view_model(tab_model)
+			self.schedule_tabwin_resize()
+
+
+	# signal handlers
+
+	def on_multi_notebook_notebook_added(self, multi, notebook, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, notebook))
+
+		self.track_notebook(notebook, tab_models)
+
+	def on_multi_notebook_notebook_removed(self, multi, notebook, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, notebook))
+
+		self.untrack_notebook(notebook, tab_models)
+
+	def on_multi_notebook_tab_added(self, multi, notebook, tab, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s, %s", self.window, notebook, tab))
+
+		self.track_tab(tab, tab_models[notebook])
+
+	def on_multi_notebook_tab_removed(self, multi, notebook, tab, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s, %s", self.window, notebook, tab))
+
+		self.untrack_tab(tab, tab_models[notebook])
+
+	def on_window_active_tab_changed(self, window, tab, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", window, tab))
+
+		self.active_tab_changed(tab, tab_models[tab.get_parent()])
+
+	def on_window_key_press_event(self, window, event, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, key=%s", window, Gdk.keyval_name(event.keyval)))
+
+		self._is_control_held = keyinfo.update_control_held(event, self._is_control_held, True)
+
+		return self.key_press_event(event)
+
+	def on_window_key_release_event(self, window, event, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, key=%s", self.window, Gdk.keyval_name(event.keyval)))
+
+		self._is_control_held = keyinfo.update_control_held(event, self._is_control_held, False)
+
+		if not any(self._is_control_held):
+			if log.query(log.INFO):
+				debug_plugin_message(log.format("no control keys held down"))
+
+			self.end_switching()
+
 		else:
-			is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup_for_settings(tab.get_settings(), Gtk.IconSize.MENU)
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("one or more control keys held down"))
 
-		self._icon_cell.set_fixed_size(icon_size_height, icon_size_height)
-		self._space_cell.set_fixed_size(icon_size_height, icon_size_height)
+	def on_window_focus_out_event(self, window, event, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", window))
 
-		multi = self._get_multi_notebook(tab)
+		self.end_switching()
 
-		if multi:
-			self._multi = multi
+	def on_window_configure_event(self, window, event, tab_models):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", window))
 
-			for doc in window.get_documents():
-				self.on_multi_notebook_notebook_added(multi, Gedit.Tab.get_from_document(doc).get_parent(), notebooks, view)
+		self.schedule_tabwin_resize()
 
-			connect_handlers(self, multi, ['notebook-added', 'notebook-removed', 'tab-added', 'tab-removed'], 'multi_notebook', notebooks, view)
-			connect_handlers(self, window, ['tabs-reordered', 'active-tab-changed', 'key-press-event', 'key-release-event', 'focus-out-event', 'configure-event'], 'window', notebooks, view)
+	def on_tab_notify_name_state(self, tab, pspec, tab_model):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, tab))
+
+		tab_model.update(tab)
+
+	def on_tab_model_row_changed(self, tab_model, path):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, path=%s", self.window, path))
+
+		if not self.is_active_view_model(tab_model):
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("tab model not active"))
+
+			return
+
+		self.schedule_tabwin_resize()
+
+	def on_tab_model_selected_path_changed(self, tab_model, path):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, path=%s", self.window, path))
+
+		if not self.is_active_view_model(tab_model):
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("tab model not active"))
+
+			return
+
+		self.set_view_selection(path)
+
+
+	# tree view
+
+	def is_active_view_model(self, tab_model):
+		model = tab_model.model if tab_model else None
+		return self._view.get_model() is model
+
+	def set_active_view_model(self, tab_model):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self.window, tab_model))
+
+		model = None
+		selected_path = None
+
+		if tab_model:
+			model = tab_model.model
+			selected_path = tab_model.get_selected_path()
+
+		self._view.set_model(model)
+		self.set_view_selection(selected_path)
+
+	def set_view_selection(self, path):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, path=%s", self.window, path))
+
+		view = self._view
+		selection = view.get_selection()
+
+		if path:
+			selection.select_path(path)
+			view.scroll_to_cell(path, None, True, 0.5, 0)
 
 		else:
-			try:
-				Gedit.debug_plugin_message("cannot find multi notebook from %s", tab)
-			except AttributeError:
-				pass
+			selection.unselect_all()
 
 
-	# signal handlers / main logic
+	# tab switching
 
-	def on_multi_notebook_notebook_added(self, multi, notebook, notebooks, view):
-		if notebook not in notebooks:
-			model = Gtk.ListStore(GdkPixbuf.Pixbuf, str, Gedit.Tab, 'gboolean')
-			connect_handlers(self, model, ['row-inserted', 'row-deleted', 'row-changed'], 'model', view, view.get_selection())
-			notebooks[notebook] = ([], model)
+	def key_press_event(self, event):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, key=%s", self.window, Gdk.keyval_name(event.keyval)))
 
-			for tab in notebook.get_children():
-				self.on_multi_notebook_tab_added(multi, notebook, tab, notebooks, view)
+		settings = self._settings
+		is_control_tab, is_control_page, is_control_escape = keyinfo.is_control_keys(event)
+		block_event = True
 
-	def on_multi_notebook_notebook_removed(self, multi, notebook, notebooks, view):
-		if notebook in notebooks:
-			for tab in notebook.get_children():
-				self.on_multi_notebook_tab_removed(multi, notebook, tab, notebooks, view)
+		if is_control_tab and settings and settings['use-tabbar-order']:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("coercing ctrl-tab into ctrl-page because of settings"))
 
-			stack, model = notebooks[notebook]
-			if view.get_model() is model:
-				view.set_model(None)
-			disconnect_handlers(self, model)
-			del notebooks[notebook]
+			is_control_tab = False
+			is_control_page = True
 
-	def on_multi_notebook_tab_added(self, multi, notebook, tab, notebooks, view):
-		stack, model = notebooks[notebook]
-		if tab not in stack:
-			stack.append(tab)
-			model.append((self._get_tab_icon(tab), self._get_tab_name(tab), tab, False))
-			connect_handlers(self, tab, ['notify::name', 'notify::state'], self.on_sync_icon_and_name, notebooks)
+		if self._is_switching and is_control_escape:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("ctrl-esc while switching"))
 
-	def on_multi_notebook_tab_removed(self, multi, notebook, tab, notebooks, view):
-		stack, model = notebooks[notebook]
-		if tab in stack:
-			disconnect_handlers(self, tab)
-			model.remove(model.get_iter(stack.index(tab)))
-			stack.remove(tab)
+			self.end_switching(True)
 
-	def on_window_tabs_reordered(self, window, notebooks, view):
-		multi = self._multi
-		tab = window.get_active_tab()
-		new_notebook = tab.get_parent()
-		if tab not in notebooks[new_notebook][0]:
-			old_notebook = None
-			for notebook in notebooks:
-				if tab in notebooks[notebook][0]:
-					old_notebook = notebook
-					break
-			if old_notebook:
-				self.on_multi_notebook_tab_removed(multi, old_notebook, tab, notebooks, view)
-			self.on_multi_notebook_tab_added(multi, new_notebook, tab, notebooks, view)
+		elif is_control_tab or is_control_page:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("ctrl-tab or ctrl-page"))
 
-	def on_window_active_tab_changed(self, window, tab, notebooks, view):
-		if not self._switching:
-			stack, model = notebooks[tab.get_parent()]
+			self.switch_tab(is_control_tab, keyinfo.is_next_key(event), event.time)
 
-			if view.get_model() is not model:
-				view.set_model(model)
-				self._schedule_tabwin_resize()
+		elif self._is_switching and not self._is_tabwin_visible:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("normal key while switching and tabwin not visible"))
 
-			for row in model:
-				row[self.SELECTED_TAB_COLUMN] = False
+			self.end_switching()
+			block_event = False
 
-			if not self._tabbing and not self._paging:
-				if tab in stack:
-					model.move_after(model.get_iter(stack.index(tab)), None)
-					stack.remove(tab)
-				else:
-					model.insert(0, (self._get_tab_icon(tab), self._get_tab_name(tab), tab, False))
+		else:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("normal key while %s", "switching" if self._is_switching else "not switching"))
 
-				stack.insert(0, tab)
-				model[0][self.SELECTED_TAB_COLUMN] = True
+			block_event = self._is_switching
+
+		return block_event
+
+	def switch_tab(self, use_mru_order, to_next_tab, time):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, use_mru_order=%s, to_next_tab=%s, time=%s", self.window, use_mru_order, to_next_tab, time))
+
+		window = self.window
+		current_tab = window.get_active_tab()
+
+		if not current_tab:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("no tabs"))
+
+			return
+
+		notebook = current_tab.get_parent()
+
+		tabs = self._tab_models[notebook] if use_mru_order else notebook.get_children()
+		num_tabs = len(tabs)
+
+		if num_tabs < 2:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("only 1 tab"))
+
+			return
+
+		current_index = tabs.index(current_tab)
+		step = 1 if to_next_tab else -1
+		next_index = (current_index + step) % num_tabs
+
+		next_tab = tabs[next_index]
+
+		if log.query(log.DEBUG):
+			debug_plugin_message(log.format("switching from %s to %s", current_tab, next_tab))
+
+		if not self._is_switching:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("saving %s as initial tab", current_tab))
+
+			self._initial_tab = current_tab
+
+		self._is_switching = True
+
+		window.set_active_tab(next_tab)
+
+		if use_mru_order:
+			tabwin = self._tabwin
+
+			if not self._is_tabwin_visible:
+				if log.query(log.DEBUG):
+					debug_plugin_message(log.format("showing tabwin"))
+
+				tabwin.show_all()
 
 			else:
-				model[stack.index(tab)][self.SELECTED_TAB_COLUMN] = True
+				if log.query(log.DEBUG):
+					debug_plugin_message(log.format("presenting tabwin"))
 
-	def on_window_key_press_event(self, window, event, notebooks, view):
-		key = Gdk.keyval_name(event.keyval)
-		state = event.state & Gtk.accelerator_get_default_mod_mask()
+				tabwin.present_with_time(time)
 
-		if key == 'Control_L':
-			self._ctrl_l = True
+			self._is_tabwin_visible = True
 
-		if key == 'Control_R':
-			self._ctrl_r = True
+	def end_switching(self, do_revert=False):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, do_revert=%s", self.window, do_revert))
 
-		if key in self.META_KEYS or not state & Gdk.ModifierType.CONTROL_MASK:
-			return False
+		if not self._is_switching:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("not switching"))
 
-		is_ctrl = state == Gdk.ModifierType.CONTROL_MASK
-		is_ctrl_shift = state == Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK
-		is_tab_key = key in ['ISO_Left_Tab', 'Tab']
-		is_page_key = key in ['Page_Up', 'Page_Down']
-		is_up_dir = key in ['ISO_Left_Tab', 'Page_Up']
+			return
 
-		if not (((is_ctrl or is_ctrl_shift) and is_tab_key) or (is_ctrl and is_page_key)):
-			self._end_switching()
-			return False
+		window = self.window
+		initial_tab = self._initial_tab
 
-		cur = window.get_active_tab()
-		if cur:
-			settings = self._settings
-			notebook = cur.get_parent()
-			stack, model = notebooks[notebook]
-			is_tabbing = is_tab_key and not (settings and settings.get_boolean(self.USE_TABBAR_ORDER))
-			tabs = stack if is_tabbing else notebook.get_children()
-			tlen = len(tabs)
+		self._tabwin.hide()
 
-			if tlen > 1 and cur in tabs:
-				i = -1 if is_up_dir else 1
-				next = tabs[(tabs.index(cur) + i) % tlen]
+		self._is_switching = False
+		self._is_tabwin_visible = False
+		self._initial_tab = None
 
-				model[stack.index(cur)][self.SELECTED_TAB_COLUMN] = False
-				model[stack.index(next)][self.SELECTED_TAB_COLUMN] = True
+		if do_revert and initial_tab:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("switching to initial tab %s", initial_tab))
 
-				if is_tabbing:
-					tabwin = self._tabwin
+			window.set_active_tab(initial_tab)
 
-					if not self._tabbing:
-						view.scroll_to_cell(Gtk.TreePath.new_first(), None, True, 0, 0)
-						tabwin.show_all()
-					else:
-						tabwin.present_with_time(event.time)
-
-					self._tabbing = True
-				else:
-					self._paging = True
-
-				self._switching = True
-				window.set_active_tab(next)
-				self._switching = False
-
-		return True
-
-	def on_window_key_release_event(self, window, event, notebooks, view):
-		key = Gdk.keyval_name(event.keyval)
-
-		if key == 'Control_L':
-			self._ctrl_l = False
-
-		if key == 'Control_R':
-			self._ctrl_r = False
-
-		if not self._ctrl_l and not self._ctrl_r:
-			self._end_switching()
-
-	def on_window_focus_out_event(self, window, event, notebooks, view):
-		self._end_switching()
-
-	def on_window_configure_event(self, window, event, notebooks, view):
-		self._schedule_tabwin_resize()
-
-	def _end_switching(self):
-		if self._tabbing or self._paging:
-			self._tabbing = False
-			self._paging = False
-			self._switching = False
-			self._ctrl_l = False
-			self._ctrl_r = False
-			self._tabwin.hide()
-
-			window = self.window
+		else:
 			tab = window.get_active_tab()
+
 			if tab:
-				self.on_window_active_tab_changed(window, tab, self._notebooks, self._view)
-
-	def on_model_row_inserted(self, model, path, iter, view, sel):
-		if view.get_model() is model:
-			self._schedule_tabwin_resize()
-
-	def on_model_row_deleted(self, model, path, view, sel):
-		if view.get_model() is model:
-			self._schedule_tabwin_resize()
-
-	def on_model_row_changed(self, model, path, iter, view, sel):
-		if view.get_model() is model:
-			if model[path][self.SELECTED_TAB_COLUMN]:
-				sel.select_path(path)
-				view.scroll_to_cell(path, None, True, 0.5, 0)
-			else:
-				sel.unselect_path(path)
-			self._schedule_tabwin_resize()
-
-	def on_sync_icon_and_name(self, tab, pspec, notebooks):
-		stack, model = notebooks[tab.get_parent()]
-		if tab in stack:
-			path = stack.index(tab)
-			model[path][0] = self._get_tab_icon(tab)
-			model[path][1] = self._get_tab_name(tab)
-
-
-	# tab name / icon
-
-	# based on
-	# <  3.12: tab_get_name() in gedit-documents-panel.c
-	# >= 3.12: doc_get_name() and document_row_sync_tab_name_and_icon() in gedit-documents-panel.c
-	def _get_tab_name(self, tab):
-		doc = tab.get_document()
-		name = doc.get_short_name_for_display()
-		docname = Gedit.utils_str_middle_truncate(name, self.MAX_DOC_NAME_LENGTH)
-		tab_name_formats = self.TAB_NAME_LISTBOX_FORMATS if self._is_side_panel_stack else self.TAB_NAME_GEDITPANEL_FORMATS
-
-		if not doc.get_modified():
-			tab_name = escape(docname)
-		else:
-			tab_name = tab_name_formats['modified'] % escape(docname)
-
-		try:
-			file = doc.get_file()
-			is_readonly = GtkSource.File.is_readonly(file)
-		except AttributeError:
-			is_readonly = doc.get_readonly() # deprecated since 3.18
-
-		if is_readonly:
-			tab_name += tab_name_formats['readonly'] % escape(_("Read-Only"))
-
-		return tab_name
-
-	def _get_tab_icon(self, tab):
-		if self._is_side_panel_stack:
-			icon = self._get_named_tab_icon(tab)
-		else:
-			icon = self._get_stock_tab_icon(tab)
-		return icon
-
-	# based on _gedit_tab_get_icon() in gedit-tab.c >= 3.12
-	def _get_named_tab_icon(self, tab):
-		icon_name = None
-		pixbuf = None
-		state = tab.get_state()
-
-		if state in self.TAB_STATE_TO_NAMED_ICON:
-			icon_name = self.TAB_STATE_TO_NAMED_ICON[state]
-
-		if icon_name:
-			theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
-			is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup(Gtk.IconSize.MENU)
-			pixbuf = Gtk.IconTheme.load_icon(theme, icon_name, icon_size_height, 0)
-
-		return pixbuf
-
-	# based on _gedit_tab_get_icon() in gedit-tab.c < 3.12
-	def _get_stock_tab_icon(self, tab):
-		theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
-		is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup_for_settings(tab.get_settings(), Gtk.IconSize.MENU)
-		state = tab.get_state()
-
-		if state in self.TAB_STATE_TO_STOCK_ICON:
-			try:
-				pixbuf = self._get_stock_icon(theme, self.TAB_STATE_TO_STOCK_ICON[state], icon_size_height)
-			except GObject.GError:
-				pixbuf = None
-		else:
-			pixbuf = None
-
-		if not pixbuf:
-			pixbuf = self._get_icon(theme, tab.get_document().get_location(), icon_size_height)
-
-		return pixbuf
-
-	# based on get_stock_icon() in gedit-tab.c in < 3.12
-	def _get_stock_icon(self, theme, stock, size):
-		pixbuf = theme.load_icon(stock, size, 0)
-		return self._resize_icon(pixbuf, size)
-
-	# based on get_icon() in gedit-tab.c in < 3.12
-	def _get_icon(self, theme, location, size):
-		if not location:
-			return self._get_stock_icon(theme, Gtk.STOCK_FILE, size)
-
-		# FIXME: Doing a sync stat is bad, this should be fixed
-		try:
-			info = location.query_info(Gio.FILE_ATTRIBUTE_STANDARD_ICON, Gio.FileQueryInfoFlags.NONE, None)
-		except GObject.GError:
-			info = None
-
-		if not info:
-			return self._get_stock_icon(theme, Gtk.STOCK_FILE, size)
-
-		icon = info.get_icon()
-
-		if not icon:
-			return self._get_stock_icon(theme, Gtk.STOCK_FILE, size)
-
-		icon_info = theme.lookup_by_gicon(icon, size, 0);
-
-		if not icon_info:
-			return self._get_stock_icon(theme, Gtk.STOCK_FILE, size)
-
-		pixbuf = icon_info.load_icon()
-
-		if not pixbuf:
-			return self._get_stock_icon(theme, Gtk.STOCK_FILE, size)
-
-		return self._resize_icon(pixbuf, size)
-
-	# based on resize_icon() in gedit-tab.c in < 3.12
-	def _resize_icon(self, pixbuf, size):
-		width = pixbuf.get_width()
-		height = pixbuf.get_height()
-
-		# if the icon is larger than the nominal size, scale down
-		if max(width, height) > size:
-			if width > height:
-				height = height * size / width
-				width = size
-			else:
-				width = width * size / height
-				height = size
-
-			pixbuf = pixbuf.scale_simple(width, height, GdkPixbuf.InterpType.BILINEAR)
-
-		return pixbuf
+				self.active_tab_changed(tab, self._tab_models[tab.get_parent()])
 
 
 	# tab window resizing
 
-	def _schedule_tabwin_resize(self):
-		if not self._tabwin_resize_id:
-			# need to wait a little before asking the treeview for its preferred size
-			# maybe because treeview rendering is async?
-			# this feels like a giant hack
-			try:
-				resize_id = GLib.idle_add(self._do_tabwin_resize)
-			except TypeError:
-				# gedit 3.0
-				resize_id = GObject.idle_add(self._do_tabwin_resize)
+	def schedule_tabwin_resize(self):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", self.window))
 
-			self._tabwin_resize_id = resize_id
-
-	def _cancel_tabwin_resize(self):
 		if self._tabwin_resize_id:
-			GLib.source_remove(self._tabwin_resize_id)
-			self._tabwin_resize_id = None
+			if log.query(log.INFO):
+				debug_plugin_message(log.format("already scheduled"))
 
-	def _do_tabwin_resize(self):
+			return
+
+		# need to wait a little before asking the treeview for its preferred size
+		# maybe because treeview rendering is async?
+		# this feels like a giant hack
+		try:
+			resize_id = GLib.idle_add(self.do_tabwin_resize)
+		except TypeError: # before pygobject 3.0
+			resize_id = GObject.idle_add(self.do_tabwin_resize)
+
+		self._tabwin_resize_id = resize_id
+
+	def cancel_tabwin_resize(self):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", self.window))
+
+		if not self._tabwin_resize_id:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("not scheduled"))
+
+			return
+
+		GLib.source_remove(self._tabwin_resize_id)
+
+		self._tabwin_resize_id = None
+
+	def do_tabwin_resize(self):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", self.window))
+
 		view = self._view
 		sw = self._sw
 
 		view_min_size, view_nat_size = view.get_preferred_size()
 		view_height = max(view_min_size.height, view_nat_size.height)
 
-		num_rows = max(len(view.get_model()), 2)
-		row_height = math.ceil(view_height / num_rows)
-		max_rows_height = self.MAX_TAB_WINDOW_ROWS * row_height
+		num_rows = len(view.get_model())
+		if num_rows:
+			row_height = math.ceil(view_height / num_rows)
+			max_rows_height = self.MAX_TAB_WINDOW_ROWS * row_height
+		else:
+			max_rows_height = float('inf')
 
 		win_width, win_height = self.window.get_size()
 		max_win_height = round(self.MAX_TAB_WINDOW_HEIGHT_PERCENTAGE * win_height)
@@ -654,36 +712,350 @@ class ControlYourTabsPlugin(GObject.Object, Gedit.WindowActivatable, PeasGtk.Con
 		tabwin_width = max(sw_min_size.width, sw_nat_size.width)
 		tabwin_height = min(view_height, max_height)
 
+		if log.query(log.DEBUG):
+			debug_plugin_message(log.format("view height     = %s", view_height))
+			debug_plugin_message(log.format("max rows height = %s", max_rows_height))
+			debug_plugin_message(log.format("max win height  = %s", max_win_height))
+			debug_plugin_message(log.format("tabwin height   = %s", tabwin_height))
+			debug_plugin_message(log.format("tabwin width = %s", tabwin_width))
+
 		self._tabwin.set_size_request(tabwin_width, tabwin_height)
 
 		self._tabwin_resize_id = None
+
 		return False
 
 
-	# misc
+class ControlYourTabsTabModel(GObject.Object):
 
-	# this is a /hack/
-	def _get_multi_notebook(self, tab):
-		multi = tab.get_parent()
-		while multi:
-			if multi.__gtype__.name == 'GeditMultiNotebook':
-				break
-			multi = multi.get_parent()
-		return multi
+	__gtype_name__ = 'ControlYourTabsTabModel'
 
-	def _get_settings(self):
-		schemas_path = os.path.join(BASE_PATH, 'schemas')
-		try:
-			# available in gedit >= 3.4
-			schema_source = Gio.SettingsSchemaSource.new_from_directory(schemas_path, Gio.SettingsSchemaSource.get_default(), False)
-			schema = Gio.SettingsSchemaSource.lookup(schema_source, self.SETTINGS_SCHEMA_ID, False)
-			settings = Gio.Settings.new_full(schema, None, None) if schema else None
-		except AttributeError:
-			settings = None
-		except:
-			try:
-				Gedit.debug_plugin_message("could not load settings schema from %s", schemas_path)
-			except AttributeError:
-				pass
-			settings = None
-		return settings
+	__gsignals__ = { # before pygobject 3.4
+		'row-inserted': (GObject.SignalFlags.RUN_FIRST, None, (Gtk.TreePath,)),
+		'row-deleted': (GObject.SignalFlags.RUN_FIRST, None, (Gtk.TreePath,)),
+		'row-changed': (GObject.SignalFlags.RUN_FIRST, None, (Gtk.TreePath,)),
+		'rows-reordered': (GObject.SignalFlags.RUN_FIRST, None, ()),
+		'selected-path-changed': (GObject.SignalFlags.RUN_FIRST, None, (Gtk.TreePath,))
+	}
+
+
+	def _model_modifier(fn):
+		@wraps(fn)
+		def wrapper(self, *args, **kwargs):
+			prev_path = self.get_selected_path()
+
+			result = fn(self, *args, **kwargs)
+
+			cur_path = self.get_selected_path()
+
+			if cur_path != prev_path:
+				self.emit('selected-path-changed', cur_path)
+
+			return result
+
+		return wrapper
+
+
+	def __init__(self, tabinfo):
+		GObject.Object.__init__(self)
+
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", self))
+
+		self._model = Gtk.ListStore.new((GdkPixbuf.Pixbuf, str, Gedit.Tab))
+		self._references = {}
+		self._selected = None
+		self._tabinfo = tabinfo
+
+		connect_handlers(
+			self, self._model,
+			[
+				'row-inserted',
+				'row-deleted',
+				'row-changed',
+				'rows-reordered'
+			],
+			'model'
+		)
+
+	def __len__(self):
+		return len(self._model)
+
+	def __getitem__(self, key):
+		return self._model[key][2]
+
+	@_model_modifier
+	def __delitem__(self, key):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, key=%s", self, key))
+
+		tab = self._model[key][2]
+
+		if self._selected == tab:
+			self._selected = None
+
+		del self._references[tab]
+
+		# before pygobject 3.2, cannot del model[path]
+		self._model.remove(self._model.get_iter(key))
+
+	def __iter__(self):
+		return [row[2] for row in self._model]
+
+	def __contains__(self, item):
+		return item in self._references
+
+	@property
+	def model(self):
+		return self._model
+
+	def on_model_row_inserted(self, model, path, iter_):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s, path=%s", self, model, path))
+
+		self.emit('row-inserted', path)
+
+	def on_model_row_deleted(self, model, path):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s, path=%s", self, model, path))
+
+		self.emit('row-deleted', path)
+
+	def on_model_row_changed(self, model, path, iter_):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s, path=%s", self, model, path))
+
+		self.emit('row-changed', path)
+
+	def on_model_rows_reordered(self, model, path, iter_, new_order):
+		if log.query(log.INFO):
+			# path is suppose to point to the parent node of the reordered rows
+			# if top level rows are reordered, path is invalid (null?)
+			# so don't print it out here, because will throw an error
+			debug_plugin_message(log.format("%s, %s", self, model))
+
+		self.emit('rows-reordered')
+
+	def do_row_inserted(self, path):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, path=%s", self, path))
+
+	def do_row_deleted(self, path):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, path=%s", self, path))
+
+	def do_row_changed(self, path):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, path=%s", self, path))
+
+	def do_rows_reordered(self):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", self))
+
+	def do_selected_path_changed(self, path):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, path=%s", self, path))
+
+	@_model_modifier
+	def insert(self, position, tab):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, position=%s, %s", self, position, tab))
+
+		tab_iter = self._model.insert(
+			position,
+			(
+				self._tabinfo.get_tab_icon(tab),
+				self._tabinfo.get_tab_name(tab),
+				tab
+			)
+		)
+
+		self._references[tab] = Gtk.TreeRowReference.new(self._model, self._model.get_path(tab_iter))
+
+	def append(self, tab):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self, tab))
+
+		self.insert(len(self._model), tab) # before pygobject 3.2, -1 position does not work
+
+	def prepend(self, tab):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self, tab))
+
+		self.insert(0, tab)
+
+	def remove(self, tab):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self, tab))
+
+		del self[self.get_path(tab)]
+
+	@_model_modifier
+	def move(self, tab, sibling, move_before):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s, %s, move_before=%s", self, tab, sibling, move_before))
+
+		tab_iter = self._get_iter(tab)
+		sibling_iter = self._get_iter(sibling) if sibling else None
+
+		if move_before:
+			self._model.move_before(tab_iter, sibling_iter)
+		else:
+			self._model.move_after(tab_iter, sibling_iter)
+
+	def move_before(self, tab, sibling=None):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s, %s", self, tab, sibling))
+
+		self.move(tab, sibling, True)
+
+	def move_after(self, tab, sibling=None):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s, %s", self, tab, sibling))
+
+		self.move(tab, sibling, False)
+
+	def get_path(self, tab):
+		return self._references[tab].get_path()
+
+	def index(self, tab):
+		return int(str(self.get_path(tab)))
+
+	def _get_iter(self, tab):
+		return self._model.get_iter(self.get_path(tab))
+
+	@_model_modifier
+	def select(self, tab):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self, tab))
+
+		self._selected = tab
+
+	def unselect(self):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s", self))
+
+		self.select(None)
+
+	def get_selected(self):
+		return self._selected
+
+	def get_selected_path(self):
+		return self.get_path(self._selected) if self._selected else None
+
+	def update(self, tab):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format("%s, %s", self, tab))
+
+		path = self.get_path(tab)
+
+		self._model[path][0] = self._tabinfo.get_tab_icon(tab)
+		self._model[path][1] = self._tabinfo.get_tab_name(tab)
+
+
+class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
+
+	__gtype_name__ = 'ControlYourTabsConfigurable'
+
+
+	def do_create_configure_widget(self):
+		if log.query(log.INFO):
+			debug_plugin_message(log.format(""))
+
+		settings = get_settings()
+
+		if settings:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("have settings"))
+
+			widget = Gtk.CheckButton.new_with_label(
+				_("Use tab row order for Ctrl+Tab / Ctrl+Shift+Tab")
+			)
+
+			settings.bind(
+				'use-tabbar-order',
+				widget, 'active',
+				Gio.SettingsBindFlags.DEFAULT
+			)
+
+			widget._settings = settings
+
+		else:
+			if log.query(log.DEBUG):
+				debug_plugin_message(log.format("no settings"))
+
+			widget = Gtk.Label.new(
+				_("Sorry, no preferences are available for this version of gedit.")
+			)
+
+		box = Gtk.Box.new(Gtk.Orientation.VERTICAL, 0)
+		box.set_border_width(5)
+		box.add(widget)
+
+		return box
+
+
+# this is a /hack/
+# can do window.get_template_child(Gedit.Window, 'multi_notebook') since gedit 3.12
+def get_multi_notebook(tab):
+	if log.query(log.INFO):
+		debug_plugin_message(log.format("%s", tab))
+
+	widget = tab.get_parent()
+
+	while widget:
+		if widget.__gtype__.name == 'GeditMultiNotebook':
+			break
+
+		widget = widget.get_parent()
+
+	return widget
+
+def get_settings():
+	if log.query(log.INFO):
+		debug_plugin_message(log.format(""))
+
+	schemas_path = os.path.join(BASE_PATH, 'schemas')
+
+	try:
+		schema_source = Gio.SettingsSchemaSource.new_from_directory(
+			schemas_path,
+			Gio.SettingsSchemaSource.get_default(),
+			False
+		)
+
+	except AttributeError: # before gedit 3.4
+		if log.query(log.DEBUG):
+			debug_plugin_message(log.format("relocatable schemas not supported"))
+
+		schema_source = None
+
+	except:
+		if log.query(log.WARNING):
+			debug_plugin_message(log.format("could not load settings schema source from %s", schemas_path))
+
+		schema_source = None
+
+	if not schema_source:
+		if log.query(log.DEBUG):
+			debug_plugin_message(log.format("no schema source"))
+
+		return None
+
+	schema = schema_source.lookup(
+		'com.thingsthemselves.gedit.plugins.controlyourtabs',
+		False
+	)
+
+	if not schema:
+		if log.query(log.WARNING):
+			debug_plugin_message(log.format("could not lookup schema"))
+
+		return None
+
+	return Gio.Settings.new_full(
+		schema,
+		None,
+		'/com/thingsthemselves/gedit/plugins/controlyourtabs/'
+	)
+
