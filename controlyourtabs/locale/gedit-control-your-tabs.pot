@@ -21,7 +21,7 @@ msgid "Documents"
 msgstr ""
 
 #: __init__.py:241
-msgid "Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab"
+msgid "Use tab row order for Ctrl+Tab / Ctrl+Shift+Tab"
 msgstr ""
 
 #: __init__.py:247

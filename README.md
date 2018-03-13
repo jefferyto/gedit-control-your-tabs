@@ -30,7 +30,7 @@ gedit 2 is [v0.1.2][].
     <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> - Switch tabs in
     most recently used order.
 *   <kbd>Ctrl</kbd>+<kbd>Page Up</kbd> /
-    <kbd>Ctrl</kbd>+<kbd>Page Down</kbd> - Switch tabs in tabbar order.
+    <kbd>Ctrl</kbd>+<kbd>Page Down</kbd> - Switch tabs in tab row order.
 
 Hold down <kbd>Ctrl</kbd> to continue tab switching. Press
 <kbd>Esc</kbd> while switching to cancel and return to the initial tab.
@@ -39,10 +39,10 @@ Hold down <kbd>Ctrl</kbd> to continue tab switching. Press
 
 In gedit 3.4 or later, the plugin supports these preferences:
 
-*   `Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab` - Change
+*   `Use tab row order for Ctrl+Tab / Ctrl+Shift+Tab` - Change
     <kbd>Ctrl</kbd>+<kbd>Tab</kbd> /
     <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> to switch tabs in
-    tabbar order instead of most recently used order.
+    tab row order instead of most recently used order.
 
 ## Development
 

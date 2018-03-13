@@ -969,7 +969,7 @@ class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 				debug_plugin_message(log.format("have settings"))
 
 			widget = Gtk.CheckButton.new_with_label(
-				_("Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab")
+				_("Use tab row order for Ctrl+Tab / Ctrl+Shift+Tab")
 			)
 
 			settings.bind(
