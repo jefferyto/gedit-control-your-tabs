@@ -44,7 +44,10 @@ In gedit 3.4 or later, the plugin supports these preferences:
     <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> to switch tabs in
     tab row order instead of most recently used order.
 
-## Development
+## Contributing
+
+Please base changes on, and open pull requests against, the `develop`
+branch.
 
 The code in `controlyourtabs/utils` comes from [python-gtk-utils][];
 changes should ideally be contributed to that project, then pulled back
