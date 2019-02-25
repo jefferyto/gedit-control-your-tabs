@@ -21,7 +21,7 @@ gedit 2 is [v0.1.2][].
     *   For gedit 3.6 and earlier, copy `controlyourtabs.plugin.python2`
         and rename to `controlyourtabs.plugin`.
     *   For gedit 3.8 and later, copy `controlyourtabs.plugin`.
-3.  Restart gedit, then enable the plugin in the **Plugins** tab in
+3.  Restart gedit, then activate the plugin in the **Plugins** tab in
     gedit's **Preferences** window.
 
 ## Usage
@@ -44,7 +44,10 @@ In gedit 3.4 or later, the plugin supports these preferences:
     <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> to switch tabs in
     tab row order instead of most recently used order.
 
-## Development
+## Contributing
+
+Please base changes on, and open pull requests against, the `develop`
+branch.
 
 The code in `controlyourtabs/utils` comes from [python-gtk-utils][];
 changes should ideally be contributed to that project, then pulled back
