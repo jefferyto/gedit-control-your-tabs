@@ -26,8 +26,6 @@ gedit 2 is [v0.1.2][].
 	
 ### Packages
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/gedit-control-your-tabs.svg)](https://repology.org/project/gedit-control-your-tabs/versions)
-
 - [Fedora (official repo)](https://apps.fedoraproject.org/packages/gedit-control-your-tabs) (29, 30 and Rawhide): `sudo dnf install gedit-control-your-tabs`
 
 ## Usage
