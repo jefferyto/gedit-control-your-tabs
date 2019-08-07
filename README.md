@@ -23,6 +23,10 @@ gedit 2 is [v0.1.2][].
     *   For gedit 3.8 and later, copy `controlyourtabs.plugin`.
 3.  Restart gedit, then activate the plugin in the **Plugins** tab in
     gedit's **Preferences** window.
+	
+### Packages
+
+- [Fedora (official repo)](https://apps.fedoraproject.org/packages/gedit-control-your-tabs) (29, 30 and Rawhide): `sudo dnf install gedit-control-your-tabs`
 
 ## Usage
 
