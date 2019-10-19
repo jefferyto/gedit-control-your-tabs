@@ -3,7 +3,7 @@
 <component type="addon">
   <id>com.thingsthemselves.gedit.plugins.controlyourtabs</id>
   <extends>org.gnome.gedit.desktop</extends>
-  <name>gedit-control-your-tabs</name>
+  <name>Control Your Tabs</name>
   <summary>Gedit plugin to switch between document tabs using</summary>
   <url type="homepage">https://github.com/jefferyto/gedit-control-your-tabs</url>
   <metadata_license>CC0-1.0</metadata_license>
