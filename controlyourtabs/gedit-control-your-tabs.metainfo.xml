@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2019 Artem Polishchuk <ego.cordatus@gmail.com> -->
 <component type="addon">
-  <id>gedit-control-your-tabs</id>
+  <id>com.thingsthemselves.gedit.plugins.controlyourtabs</id>
   <extends>org.gnome.gedit.desktop</extends>
   <name>gedit-control-your-tabs</name>
   <summary>Gedit plugin to switch between document tabs using</summary>
