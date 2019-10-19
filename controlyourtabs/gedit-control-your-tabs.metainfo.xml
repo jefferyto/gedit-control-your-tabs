@@ -4,7 +4,7 @@
   <id>com.thingsthemselves.gedit.plugins.controlyourtabs</id>
   <extends>org.gnome.gedit.desktop</extends>
   <name>Control Your Tabs</name>
-  <summary>Gedit plugin to switch between document tabs using</summary>
+  <summary>A gedit plugin to switch between document tabs using Ctrl+Tab</summary>
   <url type="homepage">https://github.com/jefferyto/gedit-control-your-tabs</url>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
