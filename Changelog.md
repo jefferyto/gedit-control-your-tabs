@@ -1,6 +1,7 @@
 # Changelog
 
 ## [v0.3.3-dev][Unreleased] - Unreleased
+* Added AppStream metainfo file (#15, thanks Artem Polishchuk)
 
 ## [v0.3.2] - 2018-03-13
 * Added Ctrl-Esc to cancel tab switching, causes the initial tab (before
