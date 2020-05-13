@@ -43,7 +43,6 @@ except: # before gedit 3.4
 # based on switch statement in _gedit_tab_get_icon() in gedit-tab.c
 TAB_STATE_TO_NAMED_ICON = {
 	Gedit.TabState.STATE_PRINTING: 'printer-printing-symbolic',
-	Gedit.TabState.STATE_PRINT_PREVIEWING: 'printer-symbolic',
 	Gedit.TabState.STATE_SHOWING_PRINT_PREVIEW: 'printer-symbolic',
 	Gedit.TabState.STATE_LOADING_ERROR: 'dialog-error-symbolic',
 	Gedit.TabState.STATE_REVERTING_ERROR: 'dialog-error-symbolic',
@@ -51,6 +50,12 @@ TAB_STATE_TO_NAMED_ICON = {
 	Gedit.TabState.STATE_GENERIC_ERROR: 'dialog-error-symbolic',
 	Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION: 'dialog-warning-symbolic'
 }
+
+try:
+	# Gedit.TabState.STATE_PRINT_PREVIEWING removed in gedit 3.36
+	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_PRINT_PREVIEWING] = 'printer-symbolic'
+except AttributeError:
+	pass
 
 # based on doc_get_name() and document_row_sync_tab_name_and_icon() in gedit-documents-panel.c
 def get_tab_name(tab):

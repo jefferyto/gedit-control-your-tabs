@@ -2,6 +2,7 @@
 
 ## [v0.3.3-dev][Unreleased] - Unreleased
 * Added AppStream metainfo file (#15, thanks Artem Polishchuk)
+* Fixed AttributeError when loaded in gedit 3.36 (#17)
 
 ## [v0.3.2] - 2018-03-13
 * Added Ctrl-Esc to cancel tab switching, causes the initial tab (before
