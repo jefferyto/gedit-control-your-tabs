@@ -3,7 +3,7 @@
 # tabinfo_pre312.py
 # This file is part of Control Your Tabs, a plugin for gedit
 #
-# Copyright (C) 2010-2013, 2017-2018 Jeffery To <jeffery.to@gmail.com>
+# Copyright (C) 2010-2013, 2017-2018, 2020 Jeffery To <jeffery.to@gmail.com>
 # https://github.com/jefferyto/gedit-control-your-tabs
 #
 # This program is free software: you can redistribute it and/or modify
@@ -46,7 +46,6 @@ TAB_STATE_TO_STOCK_ICON = {
 	Gedit.TabState.STATE_REVERTING: Gtk.STOCK_REVERT_TO_SAVED,
 	Gedit.TabState.STATE_SAVING: Gtk.STOCK_SAVE,
 	Gedit.TabState.STATE_PRINTING: Gtk.STOCK_PRINT,
-	Gedit.TabState.STATE_PRINT_PREVIEWING: Gtk.STOCK_PRINT_PREVIEW,
 	Gedit.TabState.STATE_SHOWING_PRINT_PREVIEW: Gtk.STOCK_PRINT_PREVIEW,
 	Gedit.TabState.STATE_LOADING_ERROR: Gtk.STOCK_DIALOG_ERROR,
 	Gedit.TabState.STATE_REVERTING_ERROR: Gtk.STOCK_DIALOG_ERROR,
@@ -54,6 +53,12 @@ TAB_STATE_TO_STOCK_ICON = {
 	Gedit.TabState.STATE_GENERIC_ERROR: Gtk.STOCK_DIALOG_ERROR,
 	Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION: Gtk.STOCK_DIALOG_WARNING
 }
+
+try:
+	# Gedit.TabState.STATE_PRINT_PREVIEWING removed in gedit 3.36
+	TAB_STATE_TO_STOCK_ICON[Gedit.TabState.STATE_PRINT_PREVIEWING] = Gtk.STOCK_PRINT_PREVIEW
+except AttributeError:
+	pass
 
 # based on tab_get_name() in gedit-documents-panel.c
 def get_tab_name(tab):
