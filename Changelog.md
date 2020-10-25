@@ -1,6 +1,7 @@
 # Changelog
 
 ## [v0.3.4-dev][Unreleased] - Unreleased
+* Fixed AttributeError when loaded in gedit 3.38
 
 ## [v0.3.3] - 2020-05-13
 * Added AppStream metainfo file (#15, thanks Artem Polishchuk)
