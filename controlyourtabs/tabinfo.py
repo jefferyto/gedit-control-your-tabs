@@ -57,6 +57,28 @@ try:
 except AttributeError:
 	pass
 
+# based on
+#   gedit_utils_str_truncate() in gedit-utils.c (removed in gedit 3.38)
+#   str_truncate() in tepl-utils.c
+def str_middle_truncate(string, truncate_length):
+	delimiter = "…"
+
+	delimiter_length = len(delimiter)
+	if truncate_length < (delimiter_length + 2):
+		return string
+
+	n_chars = len(string)
+
+	if n_chars <= truncate_length:
+		return string
+
+	num_left_chars = (truncate_length - delimiter_length) // 2
+	right_offset = n_chars - truncate_length + num_left_chars + delimiter_length
+
+	truncated = string[:num_left_chars] + delimiter + string[right_offset:]
+
+	return truncated
+
 # based on doc_get_name() and document_row_sync_tab_name_and_icon() in gedit-documents-panel.c
 def get_tab_name(tab):
 	if log.query(log.INFO):
@@ -64,7 +86,7 @@ def get_tab_name(tab):
 
 	doc = tab.get_document()
 	name = doc.get_short_name_for_display()
-	docname = Gedit.utils_str_middle_truncate(name, 60) # based on MAX_DOC_NAME_LENGTH in gedit-documents-panel.c
+	docname = str_middle_truncate(name, 60) # based on MAX_DOC_NAME_LENGTH in gedit-documents-panel.c
 
 	tab_format = "<b>%s</b>" if doc.get_modified() else "%s"
 	tab_name = tab_format % escape(docname)
