@@ -4,8 +4,8 @@
 * Fixed AttributeError when loaded in gedit 3.38
 
 ## [v0.3.3] - 2020-05-13
-* Added AppStream metainfo file (#15, thanks Artem Polishchuk)
-* Fixed AttributeError when loaded in gedit 3.36 (#17)
+* Added AppStream metainfo file ([#15][GH-15], thanks Artem Polishchuk)
+* Fixed AttributeError when loaded in gedit 3.36 ([#17][GH-17])
 
 ## [v0.3.2] - 2018-03-13
 * Added Ctrl-Esc to cancel tab switching, causes the initial tab (before
@@ -33,13 +33,13 @@
   again in the same gedit session, and a previously existing new
   document tab is replaced by an opened file, in gedit 3.14 or later
 * Fixed minor error if a file icon needed to be resized in gedit 3.10 or
-  earlier (originally fixed by nuclearmistake in #8)
+  earlier (originally fixed by nuclearmistake in [#8][GH-8])
 * Ensure when the tab list popup appears it is scrolled to the top
 * Made compatible with gedit 3.0
 * Use python-gtk-utils for some plumbing
 
 ## [v0.2.3] - 2013-05-08
-* Gedit 3.8 / Python 3 compatibility (#4, thanks thapar!)
+* Gedit 3.8 / Python 3 compatibility ([#4][GH-4], thanks thapar!)
 * Minor tweaks
 
 ## [v0.2.2] - 2013-05-03
@@ -73,3 +73,8 @@
 [v0.2.2]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.2.1...v0.2.2
 [v0.2.1]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.2.0...v0.2.1
 [v0.2.0]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.1.2...v0.2.0
+
+[GH-4]: https://github.com/jefferyto/gedit-control-your-tabs/pull/4
+[GH-8]: https://github.com/jefferyto/gedit-control-your-tabs/pull/8
+[GH-15]: https://github.com/jefferyto/gedit-control-your-tabs/pull/15
+[GH-17]: https://github.com/jefferyto/gedit-control-your-tabs/issues/17
