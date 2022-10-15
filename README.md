@@ -22,6 +22,8 @@ gedit 2 is [v0.1.2].
 
 ## Installation
 
+For easy automatic installation you can install this plugin using the [Gedit Plugin Installer](https://github.com/lwindolf/gedit-plugininstaller/) or you can do it manually:
+
 1.  Download the source code (as [zip] or [tar.gz]) and extract.
 2.  Copy the `controlyourtabs` folder and the appropriate `.plugin` file
     into `~/.local/share/gedit/plugins` (create if it does not exist):
