@@ -1,14 +1,14 @@
-# python-gtk-utils #
+# python-gtk-utils
 
 A collection of utilities ready to be `git subtree`-ed into a Python
 GTK+ project  
 <https://github.com/jefferyto/python-gtk-utils>  
-0.1.0
+0.2.0
 
 All bug reports, feature requests and miscellaneous comments are welcome
 at the [project issue tracker][].
 
-## Installation ##
+## Installation
 
 Use `git subtree` to pull this sub-project into your project:
 
@@ -29,13 +29,13 @@ Pull for updates:
 git subtree pull --prefix=path/to/code/utils --squash python-gtk-utils master
 ```
 
-## Documentation ##
+## Documentation
 
 ...would be a good idea ;-)
 
-## License ##
+## License
 
-Copyright &copy; 2013 Jeffery To <jeffery.to@gmail.com>
+Copyright &copy; 2013, 2017 Jeffery To <jeffery.to@gmail.com>
 
 Available under GNU General Public License version 3
 

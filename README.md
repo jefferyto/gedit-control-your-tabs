@@ -3,28 +3,45 @@
 Switch between document tabs using Ctrl+Tab / Ctrl+Shift+Tab and
 Ctrl+PageUp / Ctrl+PageDown  
 <https://github.com/jefferyto/gedit-control-your-tabs>  
-v0.3.1
+v0.3.4
 
-All bug reports, feature requests and miscellaneous comments are welcome
-at the [project issue tracker][].
+All bug reports, feature requests, and miscellaneous comments are
+welcome at the [project issue tracker].
+
+Be sure to watch the project on GitHub to receive notifications for new
+releases.
+
+[project issue tracker]: https://github.com/jefferyto/gedit-control-your-tabs/issues
 
 ## Requirements
 
 v0.2.0 and higher requires gedit 3. The last version compatible with
-gedit 2 is [v0.1.2][].
+gedit 2 is [v0.1.2].
+
+[v0.1.2]: https://github.com/jefferyto/gedit-control-your-tabs/releases/tag/v0.1.2
 
 ## Installation
 
 For easy automatic installation you can install this plugin using the [Gedit Plugin Installer](https://github.com/lwindolf/gedit-plugininstaller/) or you can do it manually:
 
-1.  Download the source code (as [zip][] or [tar.gz][]) and extract.
+1.  Download the source code (as [zip] or [tar.gz]) and extract.
 2.  Copy the `controlyourtabs` folder and the appropriate `.plugin` file
     into `~/.local/share/gedit/plugins` (create if it does not exist):
+    *   For gedit 3.8 and later, copy `controlyourtabs.plugin`.
     *   For gedit 3.6 and earlier, copy `controlyourtabs.plugin.python2`
         and rename to `controlyourtabs.plugin`.
-    *   For gedit 3.8 and later, copy `controlyourtabs.plugin`.
-3.  Restart gedit, then enable the plugin in the **Plugins** tab in
+3.  Restart gedit, then activate the plugin in the **Plugins** tab in
     gedit's **Preferences** window.
+
+[zip]: https://github.com/jefferyto/gedit-control-your-tabs/archive/master.zip
+[tar.gz]: https://github.com/jefferyto/gedit-control-your-tabs/archive/master.tar.gz
+
+### Packages
+
+*   [Fedora (official repo)] (Fedora 29 and later, Rawhide):
+    `sudo dnf install gedit-control-your-tabs`
+
+[Fedora (official repo)]: https://apps.fedoraproject.org/packages/gedit-control-your-tabs
 
 ## Usage
 
@@ -32,42 +49,44 @@ For easy automatic installation you can install this plugin using the [Gedit Plu
     <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> - Switch tabs in
     most recently used order.
 *   <kbd>Ctrl</kbd>+<kbd>Page Up</kbd> /
-    <kbd>Ctrl</kbd>+<kbd>Page Down</kbd> - Switch tabs in tabbar order.
+    <kbd>Ctrl</kbd>+<kbd>Page Down</kbd> - Switch tabs in tab row order.
+
+Hold down <kbd>Ctrl</kbd> to continue tab switching. Press
+<kbd>Esc</kbd> while switching to cancel and return to the initial tab.
 
 ## Preferences
 
 In gedit 3.4 or later, the plugin supports these preferences:
 
-*   `Use tabbar order for Ctrl+Tab / Ctrl+Shift+Tab` - Change
+*   `Use tab row order for Ctrl+Tab / Ctrl+Shift+Tab` - Change
     <kbd>Ctrl</kbd>+<kbd>Tab</kbd> /
     <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> to switch tabs in
-    tabbar order instead of most recently used order.
+    tab row order instead of most recently used order.
 
-## Development
+## Contributing
 
-The code in `controlyourtabs/utils` comes from [python-gtk-utils][];
+Please base changes on, and open pull requests against, the `develop`
+branch.
+
+The code in `controlyourtabs/utils` comes from [python-gtk-utils];
 changes should ideally be contributed to that project, then pulled back
 into this one with `git subtree pull`.
+
+[python-gtk-utils]: https://github.com/jefferyto/python-gtk-utils
 
 ## Credits
 
 Inspired by:
 
-*   [TabSwitch][] by Elia Sarti
-*   [TabPgUpPgDown][] by Eran M.
+*   [TabSwitch] by Elia Sarti
+*   [TabPgUpPgDown] by Eran M.
 *   the gedit Documents panel
+
+[TabSwitch]: https://wiki.gnome.org/Apps/Gedit/PluginsOld?action=AttachFile&do=view&target=tabswitch.tar.gz
+[TabPgUpPgDown]: https://wiki.gnome.org/Apps/Gedit/PluginsOld?action=AttachFile&do=view&target=tabpgupdown.tar.gz
 
 ## License
 
-Copyright &copy; 2010-2014, 2016-2017 Jeffery To <jeffery.to@gmail.com>
+Copyright &copy; 2010-2013, 2017-2018, 2020 Jeffery To <jeffery.to@gmail.com>
 
 Available under GNU General Public License version 3
-
-
-[project issue tracker]: https://github.com/jefferyto/gedit-control-your-tabs/issues
-[zip]: https://github.com/jefferyto/gedit-control-your-tabs/archive/master.zip
-[tar.gz]: https://github.com/jefferyto/gedit-control-your-tabs/archive/master.tar.gz
-[v0.1.2]: https://github.com/jefferyto/gedit-control-your-tabs/archive/v0.1.2.zip
-[python-gtk-utils]: https://github.com/jefferyto/python-gtk-utils
-[TabSwitch]: https://wiki.gnome.org/Apps/Gedit/PluginsOld?action=AttachFile&do=view&target=tabswitch.tar.gz
-[TabPgUpPgDown]: https://wiki.gnome.org/Apps/Gedit/PluginsOld?action=AttachFile&do=view&target=tabpgupdown.tar.gz
