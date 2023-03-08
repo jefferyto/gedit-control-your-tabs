@@ -22,7 +22,7 @@ gedit 2 is [v0.1.2].
 
 ## Installation
 
-1.  Download the source code (as [zip] or [tar.gz]) and extract.
+1.  Download the [latest release] and extract.
 2.  Copy the `controlyourtabs` folder and the appropriate `.plugin` file
     into `~/.local/share/gedit/plugins` (create if it does not exist):
     *   For gedit 3.8 and later, copy `controlyourtabs.plugin`.
@@ -31,8 +31,7 @@ gedit 2 is [v0.1.2].
 3.  Restart gedit, then activate the plugin in the **Plugins** tab in
     gedit's **Preferences** window.
 
-[zip]: https://github.com/jefferyto/gedit-control-your-tabs/archive/master.zip
-[tar.gz]: https://github.com/jefferyto/gedit-control-your-tabs/archive/master.tar.gz
+[latest release]: https://github.com/jefferyto/gedit-control-your-tabs/releases/latest
 
 ### Packages
 
@@ -62,9 +61,6 @@ In gedit 3.4 or later, the plugin supports these preferences:
     tab row order instead of most recently used order.
 
 ## Contributing
-
-Please base changes on, and open pull requests against, the `develop`
-branch.
 
 The code in `controlyourtabs/utils` comes from [python-gtk-utils];
 changes should ideally be contributed to that project, then pulled back
