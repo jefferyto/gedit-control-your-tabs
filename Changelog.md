@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.3.5-dev][Unreleased] - Unreleased
+## [v0.3.5] - 2023-05-03
 * Fixed AttributeError when loaded in gedit 44
 
 ## [v0.3.4] - 2020-10-26
@@ -67,7 +67,7 @@
 * Initial release
 
 
-[Unreleased]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.3.4...main
+[v0.3.5]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.3.4...v0.3.5
 [v0.3.4]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.3.3...v0.3.4
 [v0.3.3]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.3.2...v0.3.3
 [v0.3.2]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.3.1...v0.3.2
