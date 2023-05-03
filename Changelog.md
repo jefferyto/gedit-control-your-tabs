@@ -1,6 +1,7 @@
 # Changelog
 
 ## [v0.3.5-dev][Unreleased] - Unreleased
+* Fixed AttributeError when loaded in gedit 44
 
 ## [v0.3.4] - 2020-10-26
 * Fixed AttributeError when loaded in gedit 3.38
