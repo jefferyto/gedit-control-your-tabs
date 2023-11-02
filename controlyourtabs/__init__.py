@@ -28,7 +28,7 @@ import os.path
 from functools import wraps
 from gi.repository import GObject, GLib, Gtk, Gdk, GdkPixbuf, Gio, Gedit, PeasGtk
 from .utils import connect_handlers, disconnect_handlers
-from . import keyinfo, log, tabinfo, tabinfo_pre312
+from . import keyinfo, log, tabinfo
 
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 LOCALE_PATH = os.path.join(BASE_PATH, 'locale')
@@ -109,16 +109,6 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		# hack to ensure tabwin is correctly positioned/sized on first show
 		view.realize()
 
-		try:
-			GtkStack = Gtk.Stack
-		except AttributeError:
-			is_side_panel_stack = False
-		else:
-			is_side_panel_stack = isinstance(window.get_side_panel(), GtkStack) # since gedit 3.12
-
-		if log.query(log.DEBUG):
-			Gedit.debug_plugin_message(log.format("using %s tab names/icons", "current" if is_side_panel_stack else "pre-3.12"))
-
 		self._is_switching = False
 		self._is_tabwin_visible = False
 		self._is_control_held = keyinfo.default_control_held()
@@ -132,7 +122,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		self._space_cell = space_cell
 		self._tabwin_resize_id = None
 		self._settings = get_settings()
-		self._tabinfo = tabinfo if is_side_panel_stack else tabinfo_pre312
+		self._tabinfo = tabinfo
 
 		tab = window.get_active_tab()
 
@@ -209,13 +199,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 		self._icon_cell.set_fixed_size(icon_size, icon_size)
 		self._space_cell.set_fixed_size(icon_size, icon_size)
 
-		multi = get_multi_notebook(tab)
-
-		if not multi:
-			if log.query(log.ERROR):
-				Gedit.debug_plugin_message(log.format("cannot find multi notebook from %s", tab))
-
-			return
+		multi = window.get_template_child(Gedit.Window, 'multi_notebook')
 
 		connect_handlers(
 			self, multi,
@@ -990,22 +974,6 @@ class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 		return box
 
 
-# this is a /hack/
-# can do window.get_template_child(Gedit.Window, 'multi_notebook') since gedit 3.12
-def get_multi_notebook(tab):
-	if log.query(log.INFO):
-		Gedit.debug_plugin_message(log.format("%s", tab))
-
-	widget = tab.get_parent()
-
-	while widget:
-		if widget.__gtype__.name == 'GeditMultiNotebook':
-			break
-
-		widget = widget.get_parent()
-
-	return widget
-
 def get_settings():
 	if log.query(log.INFO):
 		Gedit.debug_plugin_message(log.format(""))
@@ -1018,12 +986,6 @@ def get_settings():
 			Gio.SettingsSchemaSource.get_default(),
 			False
 		)
-
-	except AttributeError: # before gedit 3.4
-		if log.query(log.DEBUG):
-			Gedit.debug_plugin_message(log.format("relocatable schemas not supported"))
-
-		schema_source = None
 
 	except:
 		if log.query(log.WARNING):
