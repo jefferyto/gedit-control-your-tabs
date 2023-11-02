@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gedit-control-your-tabs 0.4.0-dev\n"
-"POT-Creation-Date: 2023-05-03 16:48+0800\n"
+"POT-Creation-Date: 2023-11-03 00:51+0800\n"
 "PO-Revision-Date: 2014-12-03 21:27+0800\n"
 "Last-Translator: Jeffery To <jeffery.to@gmail.com>\n"
 "Language-Team: \n"
@@ -16,18 +16,18 @@ msgstr ""
 "X-Poedit-SearchPathExcluded-0: schemas\n"
 "X-Poedit-SearchPathExcluded-1: utils\n"
 
-#: __init__.py:95
+#: __init__.py:90
 msgid "Documents"
 msgstr ""
 
-#: __init__.py:972
+#: __init__.py:951
 msgid "Use tab row order for Ctrl+Tab / Ctrl+Shift+Tab"
 msgstr ""
 
-#: __init__.py:988
+#: __init__.py:967
 msgid "Sorry, no preferences are available for this version of gedit."
 msgstr ""
 
-#: tabinfo.py:79 tabinfo_pre312.py:76
+#: tabinfo.py:74
 msgid "Read-Only"
 msgstr ""
