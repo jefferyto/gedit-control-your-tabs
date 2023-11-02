@@ -3,7 +3,7 @@
 Switch between document tabs using Ctrl+Tab / Ctrl+Shift+Tab and
 Ctrl+PageUp / Ctrl+PageDown  
 <https://github.com/jefferyto/gedit-control-your-tabs>  
-v0.3.6-dev
+v0.4.0-dev
 
 All bug reports, feature requests, and miscellaneous comments are
 welcome at the [project issue tracker].
@@ -15,19 +15,19 @@ releases.
 
 ## Requirements
 
-v0.2.0 and higher requires gedit 3. The last version compatible with
-gedit 2 is [v0.1.2].
+This plugin requires gedit 3.12 or newer. The last version compatible
+with gedit 2 is [v0.1.2], and the last version compatible with gedit
+3.0-3.10 is [v0.3.5].
 
 [v0.1.2]: https://github.com/jefferyto/gedit-control-your-tabs/releases/tag/v0.1.2
+[v0.3.5]: https://github.com/jefferyto/gedit-control-your-tabs/releases/tag/v0.3.5
 
 ## Installation
 
 1.  Download the [latest release] and extract.
-2.  Copy the `controlyourtabs` folder and the appropriate `.plugin` file
-    into `~/.local/share/gedit/plugins` (create if it does not exist):
-    *   For gedit 3.8 and later, copy `controlyourtabs.plugin`.
-    *   For gedit 3.6 and earlier, copy `controlyourtabs.plugin.python2`
-        and rename to `controlyourtabs.plugin`.
+2.  Copy the `controlyourtabs` folder and the `controlyourtabs.plugin`
+    file into `~/.local/share/gedit/plugins` (create if it does not
+    exist).
 3.  Restart gedit, then activate the plugin in the **Plugins** tab in
     gedit's **Preferences** window.
 
@@ -52,8 +52,6 @@ Hold down <kbd>Ctrl</kbd> to continue tab switching. Press
 <kbd>Esc</kbd> while switching to cancel and return to the initial tab.
 
 ## Preferences
-
-In gedit 3.4 or later, the plugin supports these preferences:
 
 *   `Use tab row order for Ctrl+Tab / Ctrl+Shift+Tab` - Change
     <kbd>Ctrl</kbd>+<kbd>Tab</kbd> /

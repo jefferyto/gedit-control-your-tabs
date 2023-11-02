@@ -1,6 +1,8 @@
 # Changelog
 
-## [v0.3.6-dev][Unreleased] - Unreleased
+## [v0.4.0-dev][Unreleased] - Unreleased
+* Changed minimum gedit version required to 3.12
+* Fixed error when loaded in gedit 46
 
 ## [v0.3.5] - 2023-05-03
 * Fixed AttributeError when loaded in gedit 44
