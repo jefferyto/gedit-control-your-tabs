@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.4.0-dev][Unreleased] - Unreleased
+## [v0.4.0] - 2023-11-02
 * Changed minimum gedit version required to 3.12
 * Fixed error when loaded in gedit 46
 
@@ -71,7 +71,7 @@
 * Initial release
 
 
-[Unreleased]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.3.5...main
+[v0.4.0]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.3.5...v0.4.0
 [v0.3.5]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.3.4...v0.3.5
 [v0.3.4]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.3.3...v0.3.4
 [v0.3.3]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.3.2...v0.3.3
