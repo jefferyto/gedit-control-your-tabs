@@ -34,11 +34,6 @@ try:
 except:
 	_ = lambda s: s
 
-try:
-	debug_plugin_message = Gedit.debug_plugin_message
-except: # before gedit 3.4
-	debug_plugin_message = lambda fmt, *fmt_args: None
-
 
 # based on switch statement in _gedit_tab_get_icon() in gedit-tab.c
 TAB_STATE_TO_STOCK_ICON = {
@@ -63,7 +58,7 @@ except AttributeError:
 # based on tab_get_name() in gedit-documents-panel.c
 def get_tab_name(tab):
 	if log.query(log.INFO):
-		debug_plugin_message(log.format("%s", tab))
+		Gedit.debug_plugin_message(log.format("%s", tab))
 
 	doc = tab.get_document()
 	name = doc.get_short_name_for_display()
@@ -76,14 +71,14 @@ def get_tab_name(tab):
 		tab_name += " [<i>%s</i>]" % escape(_("Read-Only"))
 
 	if log.query(log.DEBUG):
-		debug_plugin_message(log.format("tab_name=%s", tab_name))
+		Gedit.debug_plugin_message(log.format("tab_name=%s", tab_name))
 
 	return tab_name
 
 # based on _gedit_tab_get_icon() in gedit-tab.c
 def get_tab_icon(tab):
 	if log.query(log.INFO):
-		debug_plugin_message(log.format("%s", tab))
+		Gedit.debug_plugin_message(log.format("%s", tab))
 
 	state = tab.get_state()
 	theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
@@ -94,13 +89,13 @@ def get_tab_icon(tab):
 		stock = TAB_STATE_TO_STOCK_ICON[state]
 
 		if log.query(log.DEBUG):
-			debug_plugin_message(log.format("getting stock icon %s", stock))
+			Gedit.debug_plugin_message(log.format("getting stock icon %s", stock))
 
 		try:
 			pixbuf = get_stock_icon(theme, stock, icon_size)
 		except GObject.GError:
 			if log.query(log.WARNING):
-				debug_plugin_message(log.format("could not get stock icon %s", stock))
+				Gedit.debug_plugin_message(log.format("could not get stock icon %s", stock))
 
 			pixbuf = None
 
@@ -108,7 +103,7 @@ def get_tab_icon(tab):
 		location = tab.get_document().get_location()
 
 		if log.query(log.DEBUG):
-			debug_plugin_message(log.format("getting icon for location %s", location))
+			Gedit.debug_plugin_message(log.format("getting icon for location %s", location))
 
 		pixbuf = get_icon(theme, location, icon_size)
 
@@ -116,7 +111,7 @@ def get_tab_icon(tab):
 
 def get_tab_icon_size(tab):
 	if log.query(log.INFO):
-		debug_plugin_message(log.format("%s", tab))
+		Gedit.debug_plugin_message(log.format("%s", tab))
 
 	is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup_for_settings(tab.get_settings(), Gtk.IconSize.MENU)
 
@@ -125,7 +120,7 @@ def get_tab_icon_size(tab):
 # based on get_stock_icon() in gedit-tab.c
 def get_stock_icon(theme, stock, size):
 	if log.query(log.INFO):
-		debug_plugin_message(log.format("%s, %s, size=%s", theme, stock, size))
+		Gedit.debug_plugin_message(log.format("%s, %s, size=%s", theme, stock, size))
 
 	pixbuf = theme.load_icon(stock, size, 0)
 
@@ -134,20 +129,20 @@ def get_stock_icon(theme, stock, size):
 # based on get_icon() in gedit-tab.c
 def get_icon(theme, location, size):
 	if log.query(log.INFO):
-		debug_plugin_message(log.format("%s, %s, size=%s", theme, location, size))
+		Gedit.debug_plugin_message(log.format("%s, %s, size=%s", theme, location, size))
 
 	pixbuf = None
 
 	if location:
 		if log.query(log.DEBUG):
-			debug_plugin_message(log.format("querying info for location %s", location))
+			Gedit.debug_plugin_message(log.format("querying info for location %s", location))
 
 		# FIXME: Doing a sync stat is bad, this should be fixed
 		try:
 			info = location.query_info(Gio.FILE_ATTRIBUTE_STANDARD_ICON, Gio.FileQueryInfoFlags.NONE, None)
 		except GObject.GError:
 			if log.query(log.WARNING):
-				debug_plugin_message(log.format("could not query info for location %s", location))
+				Gedit.debug_plugin_message(log.format("could not query info for location %s", location))
 
 			info = None
 
@@ -157,13 +152,13 @@ def get_icon(theme, location, size):
 
 	if pixbuf:
 		if log.query(log.DEBUG):
-			debug_plugin_message(log.format("have pixbuf"))
+			Gedit.debug_plugin_message(log.format("have pixbuf"))
 
 		pixbuf = resize_icon(pixbuf, size)
 
 	else:
 		if log.query(log.DEBUG):
-			debug_plugin_message(log.format("no pixbuf, getting stock icon %s", Gtk.STOCK_FILE))
+			Gedit.debug_plugin_message(log.format("no pixbuf, getting stock icon %s", Gtk.STOCK_FILE))
 
 		pixbuf = get_stock_icon(theme, Gtk.STOCK_FILE, size)
 
@@ -172,7 +167,7 @@ def get_icon(theme, location, size):
 # based on resize_icon() in gedit-tab.c
 def resize_icon(pixbuf, size):
 	if log.query(log.INFO):
-		debug_plugin_message(log.format("size=%s", size))
+		Gedit.debug_plugin_message(log.format("size=%s", size))
 
 	width = pixbuf.get_width()
 	height = pixbuf.get_height()

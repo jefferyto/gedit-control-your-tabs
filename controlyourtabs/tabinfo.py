@@ -33,11 +33,6 @@ try:
 except:
 	_ = lambda s: s
 
-try:
-	debug_plugin_message = Gedit.debug_plugin_message
-except: # before gedit 3.4
-	debug_plugin_message = lambda fmt, *fmt_args: None
-
 
 # based on switch statement in _gedit_tab_get_icon() in gedit-tab.c
 TAB_STATE_TO_NAMED_ICON = {
@@ -59,7 +54,7 @@ except AttributeError:
 # based on doc_get_name() and document_row_sync_tab_name_and_icon() in gedit-documents-panel.c
 def get_tab_name(tab):
 	if log.query(log.INFO):
-		debug_plugin_message(log.format("%s", tab))
+		Gedit.debug_plugin_message(log.format("%s", tab))
 
 	doc = tab.get_document()
 	name = tab.get_property('name')
@@ -79,14 +74,14 @@ def get_tab_name(tab):
 		tab_name += " [%s]" % escape(_("Read-Only"))
 
 	if log.query(log.DEBUG):
-		debug_plugin_message(log.format("tab_name=%s", tab_name))
+		Gedit.debug_plugin_message(log.format("tab_name=%s", tab_name))
 
 	return tab_name
 
 # based on _gedit_tab_get_icon() in gedit-tab.c
 def get_tab_icon(tab):
 	if log.query(log.INFO):
-		debug_plugin_message(log.format("%s", tab))
+		Gedit.debug_plugin_message(log.format("%s", tab))
 
 	state = tab.get_state()
 
@@ -101,7 +96,7 @@ def get_tab_icon(tab):
 
 def get_tab_icon_size(tab):
 	if log.query(log.INFO):
-		debug_plugin_message(log.format("%s", tab))
+		Gedit.debug_plugin_message(log.format("%s", tab))
 
 	is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup(Gtk.IconSize.MENU)
 
