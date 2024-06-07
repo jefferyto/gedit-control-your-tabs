@@ -35,15 +35,24 @@ except:
 
 
 # based on switch statement in _gedit_tab_get_icon() in gedit-tab.c
-TAB_STATE_TO_NAMED_ICON = {
-	Gedit.TabState.STATE_PRINTING: 'printer-printing-symbolic',
-	Gedit.TabState.STATE_SHOWING_PRINT_PREVIEW: 'printer-symbolic',
-	Gedit.TabState.STATE_LOADING_ERROR: 'dialog-error-symbolic',
-	Gedit.TabState.STATE_REVERTING_ERROR: 'dialog-error-symbolic',
-	Gedit.TabState.STATE_SAVING_ERROR: 'dialog-error-symbolic',
-	Gedit.TabState.STATE_GENERIC_ERROR: 'dialog-error-symbolic',
-	Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION: 'dialog-warning-symbolic'
-}
+TAB_STATE_TO_NAMED_ICON = {}
+try:
+	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.PRINTING] = 'printer-printing-symbolic'
+	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.SHOWING_PRINT_PREVIEW] = 'printer-symbolic'
+	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.LOADING_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.REVERTING_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.SAVING_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.GENERIC_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.EXTERNALLY_MODIFIED_NOTIFICATION] = 'dialog-warning-symbolic'
+except AttributeError:
+	# constant names before gedit 47
+	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_PRINTING] = 'printer-printing-symbolic'
+	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_SHOWING_PRINT_PREVIEW] = 'printer-symbolic'
+	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_LOADING_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_REVERTING_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_SAVING_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_GENERIC_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION] = 'dialog-warning-symbolic'
 
 try:
 	# Gedit.TabState.STATE_PRINT_PREVIEWING removed in gedit 3.36
