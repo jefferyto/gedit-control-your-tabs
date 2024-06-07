@@ -3,7 +3,7 @@
 # log.py
 # This file is part of Control Your Tabs, a plugin for gedit
 #
-# Copyright (C) 2010-2013, 2017-2018, 2020, 2023 Jeffery To <jeffery.to@gmail.com>
+# Copyright (C) 2010-2013, 2017-2018, 2020, 2023-2024 Jeffery To <jeffery.to@gmail.com>
 # https://github.com/jefferyto/gedit-control-your-tabs
 #
 # This program is free software: you can redistribute it and/or modify
