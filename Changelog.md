@@ -1,5 +1,7 @@
 # Changelog
 
+## [v0.4.2-dev][Unreleased] - Unreleased
+
 ## [v0.4.1] - 2024-06-07
 * Fixed error when loaded in gedit 47
 
@@ -74,6 +76,7 @@
 * Initial release
 
 
+[Unreleased]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.4.1...main
 [v0.4.1]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.4.0...v0.4.1
 [v0.4.0]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.3.5...v0.4.0
 [v0.3.5]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.3.4...v0.3.5
