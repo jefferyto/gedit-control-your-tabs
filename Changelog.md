@@ -1,6 +1,7 @@
 # Changelog
 
 ## [v0.4.1-dev][Unreleased] - Unreleased
+* Fixed error when loaded in gedit 47
 
 ## [v0.4.0] - 2023-11-02
 * Changed minimum gedit version required to 3.12

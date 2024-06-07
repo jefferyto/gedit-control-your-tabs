@@ -372,11 +372,17 @@ class ControlYourTabsWindowActivatable(GObject.Object, Gedit.WindowActivatable):
 
 		self.untrack_tab(tab, tab_models[notebook])
 
-	def on_window_active_tab_changed(self, window, tab, tab_models):
+	def on_window_active_tab_changed(self, window, tab, tab_models=None):
+		# tab parameter removed in gedit 47
+		if not tab_models:
+			tab_models = tab
+			tab = window.get_active_tab()
+
 		if log.query(log.INFO):
 			Gedit.debug_plugin_message(log.format("%s, %s", window, tab))
 
-		self.active_tab_changed(tab, tab_models[tab.get_parent()])
+		if tab:
+			self.active_tab_changed(tab, tab_models[tab.get_parent()])
 
 	def on_window_key_press_event(self, window, event, tab_models):
 		if log.query(log.INFO):
