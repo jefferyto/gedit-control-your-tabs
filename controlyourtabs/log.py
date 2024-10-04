@@ -19,6 +19,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import gi
+gi.require_version('GLib', '2.0')
+
 import os
 from gi.repository import GLib
 from .utils import debug_str
