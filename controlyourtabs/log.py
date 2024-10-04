@@ -22,6 +22,7 @@
 import os
 from gi.repository import GLib
 from .utils import debug_str
+from . import editor
 
 
 # for convenience, in decreasing order of severity
@@ -49,9 +50,14 @@ for (level, name) in LEVELS_TO_NAMES.items():
 # messages equal or higher in severity will be printed
 output_level = MESSAGE
 
-name = os.getenv('GEDIT_CONTROL_YOUR_TABS_DEBUG_LEVEL', '').lower()
-if name in NAMES_TO_LEVELS:
-	output_level = NAMES_TO_LEVELS[name]
+gedit_env_name = os.getenv('GEDIT_CONTROL_YOUR_TABS_DEBUG_LEVEL', '')
+editor_env_name = os.getenv(
+	'%s_CONTROL_YOUR_TABS_DEBUG_LEVEL' % editor.name.upper(),
+	gedit_env_name
+)
+env_name = editor_env_name.lower()
+if env_name in NAMES_TO_LEVELS:
+	output_level = NAMES_TO_LEVELS[env_name]
 
 # set by query(), used by name()
 last_queried_level = None

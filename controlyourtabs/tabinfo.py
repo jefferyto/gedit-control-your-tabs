@@ -20,50 +20,42 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os.path
-from gi.repository import Gtk, GtkSource, Gedit
+from gi.repository import Gtk, GtkSource
 from xml.sax.saxutils import escape
-from . import log
-BASE_PATH = os.path.dirname(os.path.realpath(__file__))
-LOCALE_PATH = os.path.join(BASE_PATH, 'locale')
-
-try:
-	import gettext
-	gettext.bindtextdomain('gedit-control-your-tabs', LOCALE_PATH)
-	_ = lambda s: gettext.dgettext('gedit-control-your-tabs', s)
-except:
-	_ = lambda s: s
+from .plugin import _
+from . import editor, log
 
 
 # based on switch statement in _gedit_tab_get_icon() in gedit-tab.c
 TAB_STATE_TO_NAMED_ICON = {}
 try:
-	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.PRINTING] = 'printer-printing-symbolic'
-	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.SHOWING_PRINT_PREVIEW] = 'printer-symbolic'
-	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.LOADING_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.REVERTING_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.SAVING_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.GENERIC_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.EXTERNALLY_MODIFIED_NOTIFICATION] = 'dialog-warning-symbolic'
+	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.PRINTING] = 'printer-printing-symbolic'
+	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.SHOWING_PRINT_PREVIEW] = 'printer-symbolic'
+	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.LOADING_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.REVERTING_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.SAVING_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.GENERIC_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.EXTERNALLY_MODIFIED_NOTIFICATION] = 'dialog-warning-symbolic'
 except AttributeError:
 	# constant names before gedit 47
-	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_PRINTING] = 'printer-printing-symbolic'
-	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_SHOWING_PRINT_PREVIEW] = 'printer-symbolic'
-	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_LOADING_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_REVERTING_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_SAVING_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_GENERIC_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION] = 'dialog-warning-symbolic'
+	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_PRINTING] = 'printer-printing-symbolic'
+	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_SHOWING_PRINT_PREVIEW] = 'printer-symbolic'
+	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_LOADING_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_REVERTING_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_SAVING_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_GENERIC_ERROR] = 'dialog-error-symbolic'
+	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION] = 'dialog-warning-symbolic'
 
 try:
 	# Gedit.TabState.STATE_PRINT_PREVIEWING removed in gedit 3.36
-	TAB_STATE_TO_NAMED_ICON[Gedit.TabState.STATE_PRINT_PREVIEWING] = 'printer-symbolic'
+	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_PRINT_PREVIEWING] = 'printer-symbolic'
 except AttributeError:
 	pass
 
 # based on doc_get_name() and document_row_sync_tab_name_and_icon() in gedit-documents-panel.c
 def get_tab_name(tab):
 	if log.query(log.INFO):
-		Gedit.debug_plugin_message(log.format("%s", tab))
+		editor.debug_plugin_message(log.format("%s", tab))
 
 	doc = tab.get_document()
 	name = tab.get_property('name')
@@ -83,14 +75,14 @@ def get_tab_name(tab):
 		tab_name += " [%s]" % escape(_("Read-Only"))
 
 	if log.query(log.DEBUG):
-		Gedit.debug_plugin_message(log.format("tab_name=%s", tab_name))
+		editor.debug_plugin_message(log.format("tab_name=%s", tab_name))
 
 	return tab_name
 
 # based on _gedit_tab_get_icon() in gedit-tab.c
 def get_tab_icon(tab):
 	if log.query(log.INFO):
-		Gedit.debug_plugin_message(log.format("%s", tab))
+		editor.debug_plugin_message(log.format("%s", tab))
 
 	state = tab.get_state()
 
@@ -105,7 +97,7 @@ def get_tab_icon(tab):
 
 def get_tab_icon_size(tab):
 	if log.query(log.INFO):
-		Gedit.debug_plugin_message(log.format("%s", tab))
+		editor.debug_plugin_message(log.format("%s", tab))
 
 	is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup(Gtk.IconSize.MENU)
 

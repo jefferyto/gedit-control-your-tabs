@@ -19,8 +19,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from gi.repository import Gtk, Gdk, Gedit
-from . import log
+from gi.repository import Gtk, Gdk
+from . import editor, log
 
 
 CONTROL_MASK = Gdk.ModifierType.CONTROL_MASK
@@ -45,7 +45,7 @@ def update_control_held(event, prev_statuses, new_status):
 	keyval = event.keyval
 
 	if log.query(log.INFO):
-		Gedit.debug_plugin_message(log.format("key=%s, %s, new_status=%s", Gdk.keyval_name(keyval), prev_statuses, new_status))
+		editor.debug_plugin_message(log.format("key=%s, %s, new_status=%s", Gdk.keyval_name(keyval), prev_statuses, new_status))
 
 	new_statuses = [
 		new_status if keyval == control_key else prev_status
@@ -53,7 +53,7 @@ def update_control_held(event, prev_statuses, new_status):
 	]
 
 	if log.query(log.DEBUG):
-		Gedit.debug_plugin_message(log.format("new_statuses=%s", new_statuses))
+		editor.debug_plugin_message(log.format("new_statuses=%s", new_statuses))
 
 	return new_statuses
 
@@ -62,7 +62,7 @@ def is_control_keys(event):
 	state = event.state & Gtk.accelerator_get_default_mod_mask()
 
 	if log.query(log.INFO):
-		Gedit.debug_plugin_message(log.format("key=%s, state=%s", Gdk.keyval_name(keyval), state))
+		editor.debug_plugin_message(log.format("key=%s, state=%s", Gdk.keyval_name(keyval), state))
 
 	is_control = state == CONTROL_MASK
 	is_control_shift = state == CONTROL_SHIFT_MASK
@@ -76,18 +76,18 @@ def is_control_keys(event):
 	is_control_escape = (is_control or is_control_shift) and is_escape
 
 	if log.query(log.DEBUG):
-		Gedit.debug_plugin_message(log.format("is_control_tab=%s, is_control_page=%s, is_control_escape=%s", is_control_tab, is_control_page, is_control_escape))
+		editor.debug_plugin_message(log.format("is_control_tab=%s, is_control_page=%s, is_control_escape=%s", is_control_tab, is_control_page, is_control_escape))
 
 	return (is_control_tab, is_control_page, is_control_escape)
 
 def is_next_key(event):
 	if log.query(log.INFO):
-		Gedit.debug_plugin_message(log.format("key=%s", Gdk.keyval_name(event.keyval)))
+		editor.debug_plugin_message(log.format("key=%s", Gdk.keyval_name(event.keyval)))
 
 	result = event.keyval in NEXT_KEY_SET
 
 	if log.query(log.DEBUG):
-		Gedit.debug_plugin_message(log.format("result=%s", result))
+		editor.debug_plugin_message(log.format("result=%s", result))
 
 	return result
 
