@@ -112,7 +112,6 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		self._space_cell = space_cell
 		self._tabwin_resize_id = None
 		self._settings = get_settings()
-		self._tabinfo = tabinfo
 
 		tab = window.get_active_tab()
 
@@ -164,7 +163,6 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		self._space_cell = None
 		self._tabwin_resize_id = None
 		self._settings = None
-		self._tabinfo = None
 
 	def do_update_state(self):
 		pass
@@ -184,7 +182,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		if log.query(log.INFO):
 			editor.debug_plugin_message(log.format("%s, %s", window, tab))
 
-		icon_size = self._tabinfo.get_tab_icon_size(tab)
+		icon_size = tabinfo.get_tab_icon_size(tab)
 
 		self._icon_cell.set_fixed_size(icon_size, icon_size)
 		self._space_cell.set_fixed_size(icon_size, icon_size)
@@ -234,7 +232,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 
 			return
 
-		tab_model = ControlYourTabsTabModel(self._tabinfo)
+		tab_model = ControlYourTabsTabModel()
 
 		connect_handlers(
 			self, tab_model,
@@ -731,7 +729,7 @@ class ControlYourTabsTabModel(GObject.Object):
 		return wrapper
 
 
-	def __init__(self, tabinfo):
+	def __init__(self):
 		GObject.Object.__init__(self)
 
 		if log.query(log.INFO):
@@ -740,7 +738,6 @@ class ControlYourTabsTabModel(GObject.Object):
 		self._model = Gtk.ListStore.new((GdkPixbuf.Pixbuf, str, editor.Editor.Tab))
 		self._references = {}
 		self._selected = None
-		self._tabinfo = tabinfo
 
 		connect_handlers(
 			self, self._model,
@@ -839,8 +836,8 @@ class ControlYourTabsTabModel(GObject.Object):
 		tab_iter = self._model.insert(
 			position,
 			(
-				self._tabinfo.get_tab_icon(tab),
-				self._tabinfo.get_tab_name(tab),
+				tabinfo.get_tab_icon(tab),
+				tabinfo.get_tab_name(tab),
 				tab
 			)
 		)
@@ -924,8 +921,8 @@ class ControlYourTabsTabModel(GObject.Object):
 
 		path = self.get_path(tab)
 
-		self._model[path][0] = self._tabinfo.get_tab_icon(tab)
-		self._model[path][1] = self._tabinfo.get_tab_name(tab)
+		self._model[path][0] = tabinfo.get_tab_icon(tab)
+		self._model[path][1] = tabinfo.get_tab_name(tab)
 
 
 class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
