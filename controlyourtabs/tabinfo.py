@@ -31,30 +31,30 @@ from . import editor, log
 
 
 # based on switch statement in _gedit_tab_get_icon() in gedit-tab.c
-TAB_STATE_TO_NAMED_ICON = {}
-try:
-	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.PRINTING] = 'printer-printing-symbolic'
-	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.SHOWING_PRINT_PREVIEW] = 'printer-symbolic'
-	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.LOADING_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.REVERTING_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.SAVING_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.GENERIC_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.EXTERNALLY_MODIFIED_NOTIFICATION] = 'dialog-warning-symbolic'
-except AttributeError:
-	# constant names before gedit 47
-	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_PRINTING] = 'printer-printing-symbolic'
-	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_SHOWING_PRINT_PREVIEW] = 'printer-symbolic'
-	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_LOADING_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_REVERTING_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_SAVING_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_GENERIC_ERROR] = 'dialog-error-symbolic'
-	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_EXTERNALLY_MODIFIED_NOTIFICATION] = 'dialog-warning-symbolic'
+STATE_ICONS = {
+	'PRINTING': 'document-print',
+	'PRINT_PREVIEWING': 'document-print-preview', # removed in gedit 3.36
+	'SHOWING_PRINT_PREVIEW': 'document-print-preview',
+	'LOADING_ERROR': 'dialog-error',
+	'REVERTING_ERROR': 'dialog-error',
+	'SAVING_ERROR': 'dialog-error',
+	'GENERIC_ERROR': 'dialog-error',
+	'EXTERNALLY_MODIFIED_NOTIFICATION': 'dialog-warning'
+}
 
-try:
-	# Gedit.TabState.STATE_PRINT_PREVIEWING removed in gedit 3.36
-	TAB_STATE_TO_NAMED_ICON[editor.Editor.TabState.STATE_PRINT_PREVIEWING] = 'printer-symbolic'
-except AttributeError:
-	pass
+TAB_STATE_ICONS = {}
+for state_name, icon_name in STATE_ICONS.items():
+	state = None
+	if hasattr(editor.Editor.TabState, state_name):
+		state = getattr(editor.Editor.TabState, state_name)
+	elif hasattr(editor.Editor.TabState, 'STATE_' + state_name): # before gedit 47
+		state = getattr(editor.Editor.TabState, 'STATE_' + state_name)
+
+	if editor.use_symbolic_icons:
+		icon_name += '-symbolic'
+
+	if state:
+		TAB_STATE_ICONS[state] = icon_name
 
 # based on doc_get_name() and document_row_sync_tab_name_and_icon() in gedit-documents-panel.c
 def get_tab_name(tab):
@@ -90,11 +90,11 @@ def get_tab_icon(tab):
 
 	state = tab.get_state()
 
-	if state not in TAB_STATE_TO_NAMED_ICON:
+	if state not in TAB_STATE_ICONS:
 		return None
 
 	theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
-	icon_name = TAB_STATE_TO_NAMED_ICON[state]
+	icon_name = TAB_STATE_ICONS[state]
 	icon_size = get_tab_icon_size(tab)
 
 	return Gtk.IconTheme.load_icon(theme, icon_name, icon_size, 0)
