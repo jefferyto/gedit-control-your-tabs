@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="gedit-control-your-tabs">
+	<schema id="com.thingsthemselves.pluma.plugins.controlyourtabs" path="/com/thingsthemselves/pluma/plugins/controlyourtabs/">
+		<key name="use-tabbar-order" type="b">
+			<default>false</default>
+			<summary>Use tab row order</summary>
+			<description>Use tab row order when switching tabs with Ctrl+Tab / Ctrl+Shift+Tab.</description>
+		</key>
+	</schema>
+</schemalist>

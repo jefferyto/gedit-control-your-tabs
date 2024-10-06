@@ -1,6 +1,7 @@
 # Changelog
 
 ## [v0.4.2-dev][Unreleased] - Unreleased
+* Added support for Pluma and xed
 * Settings schema can be stored in a shared schemas location instead of
   the plugin "schemas" directory
 

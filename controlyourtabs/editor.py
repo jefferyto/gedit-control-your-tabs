@@ -58,12 +58,41 @@ def _debug_plugin_message(format, *format_args):
 	message = format % format_args
 	print("%s:%d (%s) %s" % (filename, lineno, func_name, message), flush=True)
 
-gi.require_version('Gedit', '3.0')
-from gi.repository import Gedit as Editor
-name = 'gedit'
-use_new_tab_name_style = True
-use_symbolic_icons = True
-use_document_icons = False
+try:
+	gi.require_version('Gedit', '3.0')
+except ValueError:
+	Editor = None
+else:
+	from gi.repository import Gedit as Editor
+	name = 'gedit'
+	use_new_tab_name_style = True
+	use_symbolic_icons = True
+	use_document_icons = False
+
+if not Editor:
+	try:
+		gi.require_version('Xed', '1.0')
+	except ValueError:
+		Editor = None
+	else:
+		from gi.repository import Xed as Editor
+		name = 'xed'
+		use_new_tab_name_style = False
+		use_symbolic_icons = True
+		use_document_icons = True
+
+if not Editor:
+	try:
+		# needs to be last because Pluma is a non-private namespace
+		gi.require_version('Pluma', '1.0')
+	except ValueError:
+		Editor = None
+	else:
+		from gi.repository import Pluma as Editor
+		name = 'Pluma'
+		use_new_tab_name_style = False
+		use_symbolic_icons = False
+		use_document_icons = True
 
 try:
 	debug_plugin_message = Editor.debug_plugin_message
