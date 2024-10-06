@@ -32,41 +32,26 @@ def get_settings():
 	if log.query(log.INFO):
 		editor.debug_plugin_message(log.format(""))
 
-	schemas_path = os.path.join(plugin_data_dir, 'schemas')
+	schemas_directory = os.path.join(plugin_data_dir, 'schemas')
+	default_schema_source = Gio.SettingsSchemaSource.get_default()
+	schema_id = 'com.thingsthemselves.%s.plugins.controlyourtabs' % editor.name.lower()
 
 	try:
 		schema_source = Gio.SettingsSchemaSource.new_from_directory(
-			schemas_path,
-			Gio.SettingsSchemaSource.get_default(),
+			schemas_directory,
+			default_schema_source,
 			False
 		)
 
 	except:
-		if log.query(log.WARNING):
-			editor.debug_plugin_message(log.format("could not load settings schema source from %s", schemas_path))
+		if log.query(log.DEBUG):
+			editor.debug_plugin_message(log.format("could not load schema source from %s", schemas_directory))
 
 		schema_source = None
 
 	if not schema_source:
-		if log.query(log.DEBUG):
-			editor.debug_plugin_message(log.format("no schema source"))
+		schema_source = default_schema_source
 
-		return None
-
-	schema = schema_source.lookup(
-		'com.thingsthemselves.%s.plugins.controlyourtabs' % editor.name.lower(),
-		False
-	)
-
-	if not schema:
-		if log.query(log.WARNING):
-			editor.debug_plugin_message(log.format("could not lookup schema"))
-
-		return None
-
-	return Gio.Settings.new_full(
-		schema,
-		None,
-		'/com/thingsthemselves/%s/plugins/controlyourtabs/' % editor.name.lower()
-	)
+	schema = schema_source.lookup(schema_id, True) if schema_source else None
+	return Gio.Settings.new_full(schema, None, None) if schema else None
 

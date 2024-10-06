@@ -1,6 +1,8 @@
 # Changelog
 
 ## [v0.4.2-dev][Unreleased] - Unreleased
+* Settings schema can be stored in a shared schemas location instead of
+  the plugin "schemas" directory
 
 ## [v0.4.1] - 2024-06-07
 * Fixed error when loaded in gedit 47
