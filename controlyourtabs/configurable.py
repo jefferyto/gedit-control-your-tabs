@@ -63,8 +63,7 @@ class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 				editor.debug_plugin_message(log.format("no settings"))
 
 			widget = Gtk.Label.new(
-				# translators: %s: application name
-				_("Sorry, no preferences are available for this version of %s.") % editor.name
+				_("Unable to load preferences")
 			)
 
 		box = Gtk.Box.new(Gtk.Orientation.VERTICAL, 0)
