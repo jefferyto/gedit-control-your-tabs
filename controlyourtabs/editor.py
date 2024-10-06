@@ -63,6 +63,7 @@ from gi.repository import Gedit as Editor
 name = 'gedit'
 use_new_tab_name_style = True
 use_symbolic_icons = True
+use_document_icons = False
 
 try:
 	debug_plugin_message = Editor.debug_plugin_message

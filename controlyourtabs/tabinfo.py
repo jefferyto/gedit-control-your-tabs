@@ -20,11 +20,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import gi
+gi.require_version('GObject', '2.0')
+gi.require_version('Gio', '2.0')
 gi.require_version('Gtk', '3.0')
 # GtkSource can be version 3 or 4 or 300
 
 import os.path
-from gi.repository import Gtk, GtkSource
+from gi.repository import GObject, Gio, Gtk, GtkSource
 from xml.sax.saxutils import escape
 from .plugin import _
 from . import editor, log
@@ -95,21 +97,74 @@ def get_tab_icon(tab):
 		editor.debug_plugin_message(log.format("%s", tab))
 
 	state = tab.get_state()
-
-	if state not in TAB_STATE_ICONS:
-		return None
-
 	theme = Gtk.IconTheme.get_for_screen(tab.get_screen())
-	icon_name = TAB_STATE_ICONS[state]
-	icon_size = get_tab_icon_size(tab)
+	icon_size = get_tab_icon_size()
+	pixbuf = None
 
-	return Gtk.IconTheme.load_icon(theme, icon_name, icon_size, 0)
+	if state in TAB_STATE_ICONS:
+		icon_name = TAB_STATE_ICONS[state]
 
-def get_tab_icon_size(tab):
+		if log.query(log.DEBUG):
+			editor.debug_plugin_message(log.format("getting icon for state %s (%s)", state, icon_name))
+
+		pixbuf = Gtk.IconTheme.load_icon(theme, icon_name, icon_size, 0)
+
+	elif editor.use_document_icons:
+		doc = tab.get_document()
+		try:
+			file = doc.get_file()
+			location = file.get_location()
+		except AttributeError:
+			location = doc.get_location()
+
+		if log.query(log.DEBUG):
+			editor.debug_plugin_message(log.format("getting icon for location %s", location))
+
+		pixbuf = get_icon(theme, location, icon_size)
+
+	return pixbuf
+
+def get_tab_icon_size():
 	if log.query(log.INFO):
-		editor.debug_plugin_message(log.format("%s", tab))
+		editor.debug_plugin_message(log.format(""))
 
 	is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup(Gtk.IconSize.MENU)
 
 	return icon_size_height
+
+# based on get_icon() in gedit-tab.c
+def get_icon(theme, location, size):
+	if log.query(log.INFO):
+		editor.debug_plugin_message(log.format("%s, %s, size=%s", theme, location, size))
+
+	pixbuf = None
+
+	if location:
+		if log.query(log.DEBUG):
+			editor.debug_plugin_message(log.format("querying info for location %s", location))
+
+		# FIXME: Doing a sync stat is bad, this should be fixed
+		try:
+			info = location.query_info(
+				Gio.FILE_ATTRIBUTE_STANDARD_ICON,
+				Gio.FileQueryInfoFlags.NONE,
+				None
+			)
+		except GObject.GError:
+			if log.query(log.WARNING):
+				editor.debug_plugin_message(log.format("could not query info for location %s", location))
+
+			info = None
+
+		icon = info.get_icon() if info else None
+		icon_info = theme.lookup_by_gicon(icon, size, 0) if icon else None
+		pixbuf = icon_info.load_icon() if icon_info else None
+
+	if not pixbuf:
+		if log.query(log.DEBUG):
+			editor.debug_plugin_message(log.format("no pixbuf, getting generic text document icon"))
+
+		pixbuf = Gtk.IconTheme.load_icon(theme, 'text-x-generic', size, 0)
+
+	return pixbuf
 

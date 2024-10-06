@@ -185,7 +185,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		if log.query(log.INFO):
 			editor.debug_plugin_message(log.format("%s, %s", window, tab))
 
-		icon_size = tabinfo.get_tab_icon_size(tab)
+		icon_size = tabinfo.get_tab_icon_size()
 
 		self._icon_cell.set_fixed_size(icon_size, icon_size)
 		self._space_cell.set_fixed_size(icon_size, icon_size)
