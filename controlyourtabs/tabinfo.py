@@ -62,12 +62,16 @@ def get_tab_name(tab):
 		editor.debug_plugin_message(log.format("%s", tab))
 
 	doc = tab.get_document()
+	is_modified = doc.get_modified()
 	name = tab.get_property('name')
-	if doc.get_modified() and name[0] == "*":
+	if is_modified and name[0] == "*":
 		name = name[1:]
 
-	tab_format = "<b>%s</b>" if doc.get_modified() else "%s"
-	tab_name = tab_format % escape(name)
+	if is_modified:
+		name_format = '<b>%s</b>' if editor.use_new_tab_name_style else '<i>%s</i>'
+	else:
+		name_format = '%s'
+	tab_name = name_format % escape(name)
 
 	try:
 		file = doc.get_file()
@@ -76,7 +80,9 @@ def get_tab_name(tab):
 		is_readonly = doc.get_readonly() # deprecated since gedit 3.18
 
 	if is_readonly:
-		tab_name += " [%s]" % escape(_("Read-Only"))
+		readonly_format = '%s' if editor.use_new_tab_name_style else '<i>%s</i>'
+		readonly_text = readonly_format % escape(_("Read-Only"))
+		tab_name += ' [%s]' % readonly_text
 
 	if log.query(log.DEBUG):
 		editor.debug_plugin_message(log.format("tab_name=%s", tab_name))

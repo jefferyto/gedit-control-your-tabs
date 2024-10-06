@@ -61,6 +61,7 @@ def _debug_plugin_message(format, *format_args):
 gi.require_version('Gedit', '3.0')
 from gi.repository import Gedit as Editor
 name = 'gedit'
+use_new_tab_name_style = True
 use_symbolic_icons = True
 
 try:
