@@ -124,9 +124,6 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 
 			self.setup(window, tab, tab_models)
 
-			if self._multi:
-				self.active_tab_changed(tab, tab_models[tab.get_parent()])
-
 		else:
 			if log.query(log.DEBUG):
 				editor.debug_plugin_message(log.format("waiting for new tab"))
@@ -192,17 +189,29 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 
 		multi = window.get_template_child(editor.Editor.Window, 'multi_notebook')
 
-		connect_handlers(
-			self, multi,
-			[
-				'notebook-added',
-				'notebook-removed',
-				'tab-added',
-				'tab-removed'
-			],
-			'multi_notebook',
-			tab_models
-		)
+		if multi:
+			connect_handlers(
+				self, multi,
+				[
+					'notebook-added',
+					'notebook-removed',
+					'tab-added',
+					'tab-removed'
+				],
+				'multi_notebook',
+				tab_models
+			)
+		else:
+			connect_handlers(
+				self, window,
+				[
+					'tab-added',
+					'tab-removed'
+				],
+				'window',
+				tab.get_parent(), tab_models
+			)
+
 		connect_handlers(
 			self, window,
 			[
@@ -221,6 +230,8 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		for document in window.get_documents():
 			notebook = editor.Editor.Tab.get_from_document(document).get_parent()
 			self.track_notebook(notebook, tab_models)
+
+		self.active_tab_changed(tab, tab_models[tab.get_parent()])
 
 
 	# tracking notebooks / tabs
@@ -360,6 +371,18 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 	def on_multi_notebook_tab_removed(self, multi, notebook, tab, tab_models):
 		if log.query(log.INFO):
 			editor.debug_plugin_message(log.format("%s, %s, %s", self.window, notebook, tab))
+
+		self.untrack_tab(tab, tab_models[notebook])
+
+	def on_window_tab_added(self, window, tab, notebook, tab_models):
+		if log.query(log.INFO):
+			editor.debug_plugin_message(log.format("%s, %s, %s", window, notebook, tab))
+
+		self.track_tab(tab, tab_models[notebook])
+
+	def on_window_tab_removed(self, window, tab, notebook, tab_models):
+		if log.query(log.INFO):
+			editor.debug_plugin_message(log.format("%s, %s, %s", window, notebook, tab))
 
 		self.untrack_tab(tab, tab_models[notebook])
 
