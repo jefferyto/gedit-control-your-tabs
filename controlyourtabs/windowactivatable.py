@@ -229,19 +229,19 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 
 		for document in window.get_documents():
 			notebook = editor.Editor.Tab.get_from_document(document).get_parent()
-			self.track_notebook(notebook, tab_models)
+			self.track_notebook(notebook, tab_models, is_setup=True)
 
 		self.active_tab_changed(tab, tab_models[tab.get_parent()])
 
 
 	# tracking notebooks / tabs
 
-	def track_notebook(self, notebook, tab_models):
+	def track_notebook(self, notebook, tab_models, is_setup=False):
 		if log.query(log.INFO):
 			editor.debug_plugin_message(log.format("%s, %s", self.window, notebook))
 
 		if notebook in tab_models:
-			if log.query(log.WARNING):
+			if log.query(log.DEBUG if is_setup else log.WARNING):
 				editor.debug_plugin_message(log.format("already tracking notebook"))
 
 			return
