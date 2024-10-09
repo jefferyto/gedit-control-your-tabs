@@ -128,7 +128,12 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 			if log.query(log.DEBUG):
 				editor.debug_plugin_message(log.format("waiting for new tab"))
 
-			connect_handlers(self, window, ['tab-added'], 'setup', tab_models)
+			connect_handlers(
+				self, window,
+				['tab-added'],
+				'setup',
+				tab_models
+			)
 
 	def do_deactivate(self):
 		if log.query(log.INFO):
@@ -259,9 +264,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		)
 		connect_handlers(
 			self, tab_model,
-			[
-				'selected-path-changed'
-			],
+			['selected-path-changed'],
 			'tab_model'
 		)
 

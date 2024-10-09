@@ -110,7 +110,10 @@ def name(log_level=None):
 	if log_level is None:
 		log_level = last_queried_level
 
-	return LEVELS_TO_NAMES[highest(log_level)] if log_level is not None else 'unknown'
+	if log_level is None:
+		return "unknown"
+
+	return LEVELS_TO_NAMES[highest(log_level)]
 
 def format(message, *args):
 	msg = message % tuple(debug_str(arg) for arg in args)
