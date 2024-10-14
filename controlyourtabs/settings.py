@@ -29,7 +29,7 @@ from . import editor, log
 
 
 def get_settings():
-	if log.query(log.INFO):
+	if log.query(log.DEBUG):
 		editor.debug_plugin_message(log.format(""))
 
 	schemas_directory = os.path.join(plugin_data_dir, 'schemas')
@@ -44,8 +44,8 @@ def get_settings():
 		)
 
 	except:
-		if log.query(log.DEBUG):
-			editor.debug_plugin_message(log.format("could not load schema source from %s", schemas_directory))
+		if log.query(log.INFO):
+			editor.debug_plugin_message(log.format("Could not load schema source from %s", schemas_directory))
 
 		schema_source = None
 

@@ -60,7 +60,7 @@ for state_name, icon_name in STATE_ICONS.items():
 
 # based on doc_get_name() and document_row_sync_tab_name_and_icon() in gedit-documents-panel.c
 def get_tab_name(tab):
-	if log.query(log.INFO):
+	if log.query(log.DEBUG):
 		editor.debug_plugin_message(log.format("%s", tab))
 
 	doc = tab.get_document()
@@ -93,7 +93,7 @@ def get_tab_name(tab):
 
 # based on _gedit_tab_get_icon() in gedit-tab.c
 def get_tab_icon(tab):
-	if log.query(log.INFO):
+	if log.query(log.DEBUG):
 		editor.debug_plugin_message(log.format("%s", tab))
 
 	state = tab.get_state()
@@ -105,7 +105,7 @@ def get_tab_icon(tab):
 		icon_name = TAB_STATE_ICONS[state]
 
 		if log.query(log.DEBUG):
-			editor.debug_plugin_message(log.format("getting icon for state %s (%s)", state, icon_name))
+			editor.debug_plugin_message(log.format("Getting icon for state %s (%s)", state, icon_name))
 
 		pixbuf = Gtk.IconTheme.load_icon(theme, icon_name, icon_size, 0)
 
@@ -118,14 +118,14 @@ def get_tab_icon(tab):
 			location = doc.get_location()
 
 		if log.query(log.DEBUG):
-			editor.debug_plugin_message(log.format("getting icon for location %s", location))
+			editor.debug_plugin_message(log.format("Getting icon for location %s", location))
 
 		pixbuf = get_icon(theme, location, icon_size)
 
 	return pixbuf
 
 def get_tab_icon_size():
-	if log.query(log.INFO):
+	if log.query(log.DEBUG):
 		editor.debug_plugin_message(log.format(""))
 
 	is_valid_size, icon_size_width, icon_size_height = Gtk.icon_size_lookup(Gtk.IconSize.MENU)
@@ -134,14 +134,14 @@ def get_tab_icon_size():
 
 # based on get_icon() in gedit-tab.c
 def get_icon(theme, location, size):
-	if log.query(log.INFO):
+	if log.query(log.DEBUG):
 		editor.debug_plugin_message(log.format("%s, %s, size=%s", theme, location, size))
 
 	pixbuf = None
 
 	if location:
 		if log.query(log.DEBUG):
-			editor.debug_plugin_message(log.format("querying info for location %s", location))
+			editor.debug_plugin_message(log.format("Querying info for location %s", location))
 
 		# FIXME: Doing a sync stat is bad, this should be fixed
 		try:
@@ -152,7 +152,7 @@ def get_icon(theme, location, size):
 			)
 		except GObject.GError:
 			if log.query(log.WARNING):
-				editor.debug_plugin_message(log.format("could not query info for location %s", location))
+				editor.debug_plugin_message(log.format("Could not query info for location %s", location))
 
 			info = None
 
@@ -162,7 +162,7 @@ def get_icon(theme, location, size):
 
 	if not pixbuf:
 		if log.query(log.DEBUG):
-			editor.debug_plugin_message(log.format("no pixbuf, getting generic text document icon"))
+			editor.debug_plugin_message(log.format("No pixbuf, getting generic text document icon"))
 
 		pixbuf = Gtk.IconTheme.load_icon(theme, 'text-x-generic', size, 0)
 

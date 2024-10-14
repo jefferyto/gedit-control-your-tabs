@@ -63,7 +63,7 @@ class ControlYourTabsTabModel(GObject.Object):
 	def __init__(self):
 		GObject.Object.__init__(self)
 
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s", self))
 
 		self._model = Gtk.ListStore.new((GdkPixbuf.Pixbuf, str, editor.Editor.Tab))
@@ -89,7 +89,7 @@ class ControlYourTabsTabModel(GObject.Object):
 
 	@_model_modifier
 	def __delitem__(self, key):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, key=%s", self, key))
 
 		tab = self._model[key][2]
@@ -113,25 +113,25 @@ class ControlYourTabsTabModel(GObject.Object):
 		return self._model
 
 	def on_model_row_inserted(self, model, path, iter_):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s, path=%s", self, model, path))
 
 		self.emit('row-inserted', path)
 
 	def on_model_row_deleted(self, model, path):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s, path=%s", self, model, path))
 
 		self.emit('row-deleted', path)
 
 	def on_model_row_changed(self, model, path, iter_):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s, path=%s", self, model, path))
 
 		self.emit('row-changed', path)
 
 	def on_model_rows_reordered(self, model, path, iter_, new_order):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			# path is suppose to point to the parent node of the reordered rows
 			# if top level rows are reordered, path is invalid (null?)
 			# so don't print it out here, because will throw an error
@@ -140,28 +140,28 @@ class ControlYourTabsTabModel(GObject.Object):
 		self.emit('rows-reordered')
 
 	def do_row_inserted(self, path):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, path=%s", self, path))
 
 	def do_row_deleted(self, path):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, path=%s", self, path))
 
 	def do_row_changed(self, path):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, path=%s", self, path))
 
 	def do_rows_reordered(self):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s", self))
 
 	def do_selected_path_changed(self, path):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, path=%s", self, path))
 
 	@_model_modifier
 	def insert(self, position, tab):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, position=%s, %s", self, position, tab))
 
 		tab_iter = self._model.insert(
@@ -176,26 +176,26 @@ class ControlYourTabsTabModel(GObject.Object):
 		self._references[tab] = Gtk.TreeRowReference.new(self._model, self._model.get_path(tab_iter))
 
 	def append(self, tab):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", self, tab))
 
 		self.insert(len(self._model), tab) # before pygobject 3.2, -1 position does not work
 
 	def prepend(self, tab):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", self, tab))
 
 		self.insert(0, tab)
 
 	def remove(self, tab):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", self, tab))
 
 		del self[self.get_path(tab)]
 
 	@_model_modifier
 	def move(self, tab, sibling, move_before):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s, %s, move_before=%s", self, tab, sibling, move_before))
 
 		tab_iter = self._get_iter(tab)
@@ -207,13 +207,13 @@ class ControlYourTabsTabModel(GObject.Object):
 			self._model.move_after(tab_iter, sibling_iter)
 
 	def move_before(self, tab, sibling=None):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s, %s", self, tab, sibling))
 
 		self.move(tab, sibling, True)
 
 	def move_after(self, tab, sibling=None):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s, %s", self, tab, sibling))
 
 		self.move(tab, sibling, False)
@@ -229,13 +229,13 @@ class ControlYourTabsTabModel(GObject.Object):
 
 	@_model_modifier
 	def select(self, tab):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", self, tab))
 
 		self._selected = tab
 
 	def unselect(self):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s", self))
 
 		self.select(None)
@@ -247,7 +247,7 @@ class ControlYourTabsTabModel(GObject.Object):
 		return self.get_path(self._selected) if self._selected else None
 
 	def update(self, tab):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", self, tab))
 
 		path = self.get_path(tab)

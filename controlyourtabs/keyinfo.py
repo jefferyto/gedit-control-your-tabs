@@ -48,7 +48,7 @@ def default_control_held():
 def update_control_held(event, prev_statuses, new_status):
 	keyval = event.keyval
 
-	if log.query(log.INFO):
+	if log.query(log.DEBUG):
 		editor.debug_plugin_message(log.format("key=%s, %s, new_status=%s", Gdk.keyval_name(keyval), prev_statuses, new_status))
 
 	new_statuses = [
@@ -65,7 +65,7 @@ def is_control_keys(event):
 	keyval = event.keyval
 	state = event.state & Gtk.accelerator_get_default_mod_mask()
 
-	if log.query(log.INFO):
+	if log.query(log.DEBUG):
 		editor.debug_plugin_message(log.format("key=%s, state=%s", Gdk.keyval_name(keyval), state))
 
 	is_control = state == CONTROL_MASK
@@ -85,7 +85,7 @@ def is_control_keys(event):
 	return (is_control_tab, is_control_page, is_control_escape)
 
 def is_next_key(event):
-	if log.query(log.INFO):
+	if log.query(log.DEBUG):
 		editor.debug_plugin_message(log.format("key=%s", Gdk.keyval_name(event.keyval)))
 
 	result = event.keyval in NEXT_KEY_SET

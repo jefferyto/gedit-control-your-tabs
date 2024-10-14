@@ -37,14 +37,14 @@ class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 
 
 	def do_create_configure_widget(self):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format(""))
 
 		settings = get_settings()
 
 		if settings:
-			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("have settings"))
+			if log.query(log.INFO):
+				editor.debug_plugin_message(log.format("Loaded settings"))
 
 			widget = Gtk.CheckButton.new_with_label(
 				_("Use tab row order for Ctrl+Tab / Ctrl+Shift+Tab")
@@ -59,8 +59,8 @@ class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 			widget._settings = settings
 
 		else:
-			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("no settings"))
+			if log.query(log.WARNING):
+				editor.debug_plugin_message(log.format("Could not load settings"))
 
 			widget = Gtk.Label.new(
 				_("Unable to load preferences")

@@ -49,7 +49,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		GObject.Object.__init__(self)
 
 	def do_activate(self):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s", self.window))
 
 		window = self.window
@@ -119,14 +119,14 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		tab = window.get_active_tab()
 
 		if tab:
-			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("found active tab %s, setting up now", tab))
+			if log.query(log.INFO):
+				editor.debug_plugin_message(log.format("Found active tab %s, setting up now", tab))
 
 			self.setup(window, tab, tab_models)
 
 		else:
-			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("waiting for new tab"))
+			if log.query(log.INFO):
+				editor.debug_plugin_message(log.format("Waiting for new tab"))
 
 			connect_handlers(
 				self, window,
@@ -136,7 +136,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 			)
 
 	def do_deactivate(self):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s", self.window))
 
 		multi = self._multi
@@ -176,7 +176,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 	# plugin setup
 
 	def on_setup_tab_added(self, window, tab, tab_models):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", window, tab))
 
 		disconnect_handlers(self, window)
@@ -184,7 +184,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		self.setup(window, tab, tab_models)
 
 	def setup(self, window, tab, tab_models):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", window, tab))
 
 		icon_size = tabinfo.get_tab_icon_size()
@@ -242,12 +242,12 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 	# tracking notebooks / tabs
 
 	def track_notebook(self, notebook, tab_models, is_setup=False):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", self.window, notebook))
 
 		if notebook in tab_models:
 			if log.query(log.DEBUG if is_setup else log.WARNING):
-				editor.debug_plugin_message(log.format("already tracking notebook"))
+				editor.debug_plugin_message(log.format("Already tracking %s", notebook))
 
 			return
 
@@ -274,12 +274,12 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 			self.track_tab(tab, tab_model)
 
 	def untrack_notebook(self, notebook, tab_models):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", self.window, notebook))
 
 		if notebook not in tab_models:
 			if log.query(log.WARNING):
-				editor.debug_plugin_message(log.format("not tracking notebook"))
+				editor.debug_plugin_message(log.format("Not tracking %s", notebook))
 
 			return
 
@@ -296,12 +296,12 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		del tab_models[notebook]
 
 	def track_tab(self, tab, tab_model):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", self.window, tab))
 
 		if tab in tab_model:
 			if log.query(log.WARNING):
-				editor.debug_plugin_message(log.format("already tracking tab"))
+				editor.debug_plugin_message(log.format("Already tracking %s", tab))
 
 			return
 
@@ -318,18 +318,18 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		)
 
 	def untrack_tab(self, tab, tab_model):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", self.window, tab))
 
 		if tab is self._initial_tab:
 			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("tab is initial tab, clearing"))
+				editor.debug_plugin_message(log.format("Tab is initial tab, clearing"))
 
 			self._initial_tab = None
 
 		if tab not in tab_model:
 			if log.query(log.WARNING):
-				editor.debug_plugin_message(log.format("not tracking tab"))
+				editor.debug_plugin_message(log.format("Not tracking %s", tab))
 
 			return
 
@@ -338,7 +338,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		tab_model.remove(tab)
 
 	def active_tab_changed(self, tab, tab_model):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", self.window, tab))
 
 		if not self._is_switching:
@@ -354,37 +354,37 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 	# signal handlers
 
 	def on_multi_notebook_notebook_added(self, multi, notebook, tab_models):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", self.window, notebook))
 
 		self.track_notebook(notebook, tab_models)
 
 	def on_multi_notebook_notebook_removed(self, multi, notebook, tab_models):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", self.window, notebook))
 
 		self.untrack_notebook(notebook, tab_models)
 
 	def on_multi_notebook_tab_added(self, multi, notebook, tab, tab_models):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s, %s", self.window, notebook, tab))
 
 		self.track_tab(tab, tab_models[notebook])
 
 	def on_multi_notebook_tab_removed(self, multi, notebook, tab, tab_models):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s, %s", self.window, notebook, tab))
 
 		self.untrack_tab(tab, tab_models[notebook])
 
 	def on_window_tab_added(self, window, tab, notebook, tab_models):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s, %s", window, notebook, tab))
 
 		self.track_tab(tab, tab_models[notebook])
 
 	def on_window_tab_removed(self, window, tab, notebook, tab_models):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s, %s", window, notebook, tab))
 
 		self.untrack_tab(tab, tab_models[notebook])
@@ -395,14 +395,14 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 			tab_models = tab
 			tab = window.get_active_tab()
 
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", window, tab))
 
 		if tab:
 			self.active_tab_changed(tab, tab_models[tab.get_parent()])
 
 	def on_window_key_press_event(self, window, event, tab_models):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, key=%s", window, Gdk.keyval_name(event.keyval)))
 
 		self._is_control_held = keyinfo.update_control_held(event, self._is_control_held, True)
@@ -410,58 +410,58 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		return self.key_press_event(event)
 
 	def on_window_key_release_event(self, window, event, tab_models):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, key=%s", self.window, Gdk.keyval_name(event.keyval)))
 
 		self._is_control_held = keyinfo.update_control_held(event, self._is_control_held, False)
 
 		if not any(self._is_control_held):
-			if log.query(log.INFO):
-				editor.debug_plugin_message(log.format("no control keys held down"))
+			if log.query(log.DEBUG):
+				editor.debug_plugin_message(log.format("No control keys held down"))
 
 			self.end_switching()
 
 		else:
 			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("one or more control keys held down"))
+				editor.debug_plugin_message(log.format("One or more control keys held down"))
 
 	def on_window_focus_out_event(self, window, event, tab_models):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s", window))
 
 		self.end_switching()
 
 	def on_window_configure_event(self, window, event, tab_models):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s", window))
 
 		self.schedule_tabwin_resize()
 
 	def on_tab_notify_name_state(self, tab, pspec, tab_model):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", self.window, tab))
 
 		tab_model.update(tab)
 
 	def on_tab_model_row_changed(self, tab_model, path):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, path=%s", self.window, path))
 
 		if not self.is_active_view_model(tab_model):
 			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("tab model not active"))
+				editor.debug_plugin_message(log.format("Tab model not active"))
 
 			return
 
 		self.schedule_tabwin_resize()
 
 	def on_tab_model_selected_path_changed(self, tab_model, path):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, path=%s", self.window, path))
 
 		if not self.is_active_view_model(tab_model):
 			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("tab model not active"))
+				editor.debug_plugin_message(log.format("Tab model not active"))
 
 			return
 
@@ -475,7 +475,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		return self._view.get_model() is model
 
 	def set_active_view_model(self, tab_model):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", self.window, tab_model))
 
 		model = None
@@ -489,7 +489,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		self.set_view_selection(selected_path)
 
 	def set_view_selection(self, path):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, path=%s", self.window, path))
 
 		view = self._view
@@ -506,57 +506,62 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 	# tab switching
 
 	def key_press_event(self, event):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, key=%s", self.window, Gdk.keyval_name(event.keyval)))
 
 		settings = self._settings
 		is_control_tab, is_control_page, is_control_escape = keyinfo.is_control_keys(event)
-		block_event = True
+		block_event = False
 
 		if is_control_tab and settings and settings['use-tabbar-order']:
-			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("coercing ctrl-tab into ctrl-page because of settings"))
+			if log.query(log.INFO):
+				editor.debug_plugin_message(log.format("Coercing Ctrl-Tab into Ctrl-PgUp/PgDn because of settings"))
 
 			is_control_tab = False
 			is_control_page = True
 
 		if self._is_switching and is_control_escape:
-			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("ctrl-esc while switching"))
+			if log.query(log.INFO):
+				editor.debug_plugin_message(log.format("Ctrl-Esc while switching, cancel tab switching"))
 
 			self.end_switching(True)
+			block_event = True
 
 		elif is_control_tab or is_control_page:
-			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("ctrl-tab or ctrl-page"))
+			if log.query(log.INFO):
+				editor.debug_plugin_message(log.format("Ctrl-Tab or Ctrl-PgUp/PgDn, switch tab"))
 
 			self.switch_tab(is_control_tab, keyinfo.is_next_key(event), event.time)
+			block_event = True
 
 		elif self._is_switching and not self._is_tabwin_visible:
-			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("normal key while switching and tabwin not visible"))
+			if log.query(log.INFO):
+				editor.debug_plugin_message(log.format("Normal key while switching and tabwin not visible, end tab switching"))
 
 			self.end_switching()
-			block_event = False
+
+		elif self._is_switching:
+			if log.query(log.INFO):
+				editor.debug_plugin_message(log.format("Normal key while switching, block key press"))
+
+			block_event = True
 
 		else:
 			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("normal key while %s", "switching" if self._is_switching else "not switching"))
-
-			block_event = self._is_switching
+				editor.debug_plugin_message(log.format("Normal key, no action"))
 
 		return block_event
 
 	def switch_tab(self, use_mru_order, to_next_tab, time):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, use_mru_order=%s, to_next_tab=%s, time=%s", self.window, use_mru_order, to_next_tab, time))
 
 		window = self.window
 		current_tab = window.get_active_tab()
 
 		if not current_tab:
-			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("no tabs"))
+			if log.query(log.INFO):
+				editor.debug_plugin_message(log.format("No tabs"))
 
 			return
 
@@ -566,8 +571,8 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		num_tabs = len(tabs)
 
 		if num_tabs < 2:
-			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("only 1 tab"))
+			if log.query(log.INFO):
+				editor.debug_plugin_message(log.format("Only 1 tab"))
 
 			return
 
@@ -577,12 +582,12 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 
 		next_tab = tabs[next_index]
 
-		if log.query(log.DEBUG):
-			editor.debug_plugin_message(log.format("switching from %s to %s", current_tab, next_tab))
+		if log.query(log.INFO):
+			editor.debug_plugin_message(log.format("Switching from %s to %s", current_tab, next_tab))
 
 		if not self._is_switching:
-			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("saving %s as initial tab", current_tab))
+			if log.query(log.INFO):
+				editor.debug_plugin_message(log.format("Saving %s as initial tab", current_tab))
 
 			self._initial_tab = current_tab
 
@@ -594,26 +599,26 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 			tabwin = self._tabwin
 
 			if not self._is_tabwin_visible:
-				if log.query(log.DEBUG):
-					editor.debug_plugin_message(log.format("showing tabwin"))
+				if log.query(log.INFO):
+					editor.debug_plugin_message(log.format("Showing tabwin"))
 
 				tabwin.show_all()
 
 			else:
-				if log.query(log.DEBUG):
-					editor.debug_plugin_message(log.format("presenting tabwin"))
+				if log.query(log.INFO):
+					editor.debug_plugin_message(log.format("Presenting tabwin"))
 
 				tabwin.present_with_time(time)
 
 			self._is_tabwin_visible = True
 
 	def end_switching(self, do_revert=False):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, do_revert=%s", self.window, do_revert))
 
 		if not self._is_switching:
 			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("not switching"))
+				editor.debug_plugin_message(log.format("Not switching"))
 
 			return
 
@@ -627,8 +632,8 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		self._initial_tab = None
 
 		if do_revert and initial_tab:
-			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("switching to initial tab %s", initial_tab))
+			if log.query(log.INFO):
+				editor.debug_plugin_message(log.format("Switching to initial tab %s", initial_tab))
 
 			window.set_active_tab(initial_tab)
 
@@ -642,12 +647,12 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 	# tab window resizing
 
 	def schedule_tabwin_resize(self):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s", self.window))
 
 		if self._tabwin_resize_id:
-			if log.query(log.INFO):
-				editor.debug_plugin_message(log.format("already scheduled"))
+			if log.query(log.DEBUG):
+				editor.debug_plugin_message(log.format("Already scheduled"))
 
 			return
 
@@ -662,12 +667,12 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		self._tabwin_resize_id = resize_id
 
 	def cancel_tabwin_resize(self):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s", self.window))
 
 		if not self._tabwin_resize_id:
 			if log.query(log.DEBUG):
-				editor.debug_plugin_message(log.format("not scheduled"))
+				editor.debug_plugin_message(log.format("Not scheduled"))
 
 			return
 
@@ -676,7 +681,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		self._tabwin_resize_id = None
 
 	def do_tabwin_resize(self):
-		if log.query(log.INFO):
+		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s", self.window))
 
 		view = self._view
