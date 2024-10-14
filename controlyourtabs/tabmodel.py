@@ -210,13 +210,13 @@ class ControlYourTabsTabModel(GObject.Object):
 		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s, %s", self, tab, sibling))
 
-		self.move(tab, sibling, True)
+		self.move(tab, sibling, move_before=True)
 
 	def move_after(self, tab, sibling=None):
 		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s, %s", self, tab, sibling))
 
-		self.move(tab, sibling, False)
+		self.move(tab, sibling, move_before=False)
 
 	def get_path(self, tab):
 		return self._references[tab].get_path()

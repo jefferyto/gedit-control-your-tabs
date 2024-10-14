@@ -524,14 +524,18 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 			if log.query(log.INFO):
 				editor.debug_plugin_message(log.format("Ctrl-Esc while switching, cancel tab switching"))
 
-			self.end_switching(True)
+			self.end_switching(do_revert=True)
 			block_event = True
 
 		elif is_control_tab or is_control_page:
 			if log.query(log.INFO):
 				editor.debug_plugin_message(log.format("Ctrl-Tab or Ctrl-PgUp/PgDn, switch tab"))
 
-			self.switch_tab(is_control_tab, keyinfo.is_next_key(event), event.time)
+			self.switch_tab(
+				use_mru_order=is_control_tab,
+				to_next_tab=keyinfo.is_next_key(event),
+				time=event.time
+			)
 			block_event = True
 
 		elif self._is_switching and not self._is_tabwin_visible:
