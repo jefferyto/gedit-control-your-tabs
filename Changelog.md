@@ -2,6 +2,8 @@
 
 ## [v0.4.2-dev][Unreleased] - Unreleased
 * Added support for Pluma and xed
+* Added support for switching tabs with Tab/Page Up/Page Down keys in
+  numeric keypad
 * Settings schema can be stored in a shared schemas location instead of
   the plugin "schemas" directory
 

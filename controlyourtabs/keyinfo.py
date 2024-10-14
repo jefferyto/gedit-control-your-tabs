@@ -33,11 +33,11 @@ CONTROL_SHIFT_MASK = Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK
 
 CONTROL_KEY_LIST = [Gdk.KEY_Control_L, Gdk.KEY_Control_R] # will need to iterate through this list
 
-TAB_KEY_SET = set([Gdk.KEY_ISO_Left_Tab, Gdk.KEY_Tab])
+TAB_KEY_SET = set([Gdk.KEY_ISO_Left_Tab, Gdk.KEY_Tab, Gdk.KEY_KP_Tab]) # what is shift numpad tab?
 
-PAGE_KEY_SET = set([Gdk.KEY_Page_Up, Gdk.KEY_Page_Down])
+PAGE_KEY_SET = set([Gdk.KEY_Page_Up, Gdk.KEY_Page_Down, Gdk.KEY_KP_Page_Up, Gdk.KEY_KP_Page_Down])
 
-NEXT_KEY_SET = set([Gdk.KEY_Tab, Gdk.KEY_Page_Down])
+NEXT_KEY_SET = set([Gdk.KEY_Tab, Gdk.KEY_KP_Tab, Gdk.KEY_Page_Down, Gdk.KEY_KP_Page_Down])
 
 ESCAPE_KEY = Gdk.KEY_Escape
 
