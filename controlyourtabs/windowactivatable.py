@@ -321,7 +321,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		if log.query(log.INFO):
 			editor.debug_plugin_message(log.format("%s, %s", self.window, tab))
 
-		if tab == self._initial_tab:
+		if tab is self._initial_tab:
 			if log.query(log.DEBUG):
 				editor.debug_plugin_message(log.format("tab is initial tab, clearing"))
 

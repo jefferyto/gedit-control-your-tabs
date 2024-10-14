@@ -94,7 +94,7 @@ class ControlYourTabsTabModel(GObject.Object):
 
 		tab = self._model[key][2]
 
-		if self._selected == tab:
+		if self._selected is tab:
 			self._selected = None
 
 		del self._references[tab]
