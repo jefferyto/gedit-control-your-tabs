@@ -539,6 +539,10 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 				self.end_switching(do_revert=True)
 				block_event = True
 
+			elif keyinfo.is_modifier_key(event):
+				if log.query(log.INFO):
+					editor.debug_plugin_message(log.format("Modifier key while switching, no action"))
+
 			elif not self._is_tabwin_visible:
 				if log.query(log.INFO):
 					editor.debug_plugin_message(log.format("Normal key while switching and tabwin not visible, end tab switching"))
