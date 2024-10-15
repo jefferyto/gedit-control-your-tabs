@@ -529,7 +529,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 			selection.unselect_all()
 
 
-	# tab switching
+	# tab switching/moving
 
 	def pre_key_press_event(self, event):
 		if log.query(log.DEBUG):
@@ -596,6 +596,14 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 				to_next_tab=is_control.tab or is_control.page_down,
 				time=event.time
 			)
+			block_event = True
+
+		elif is_control.shift_page_up or is_control.shift_page_down:
+			if log.query(log.INFO):
+				editor.debug_plugin_message(log.format("Ctrl-Shift-PgUp/PgDn, move tab"))
+
+			self.end_switching()
+			self.move_tab(to_right=is_control.shift_page_down)
 			block_event = True
 
 		elif self._is_switching:
@@ -718,6 +726,38 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 
 			if tab:
 				self.active_tab_changed(tab, self._tab_models[tab.get_parent()])
+
+	def move_tab(self, to_right):
+		if log.query(log.DEBUG):
+			editor.debug_plugin_message(log.format("%s, to_right=%s", self.window, to_right))
+
+		window = self.window
+		current_tab = window.get_active_tab()
+
+		if not current_tab:
+			if log.query(log.INFO):
+				editor.debug_plugin_message(log.format("No tabs"))
+
+			return
+
+		notebook = current_tab.get_parent()
+		tabs = notebook.get_children()
+		num_tabs = len(tabs)
+
+		if num_tabs < 2:
+			if log.query(log.INFO):
+				editor.debug_plugin_message(log.format("Only 1 tab"))
+
+			return
+
+		current_index = tabs.index(current_tab)
+		step = 1 if to_right else -1
+		next_index = (current_index + step) % num_tabs
+
+		try:
+			notebook.reorder_tab(current_tab, next_index)
+		except AttributeError:
+			notebook.reorder_child(current_tab, next_index)
 
 
 	# tab window resizing
