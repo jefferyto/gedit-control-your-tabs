@@ -535,21 +535,21 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, key=%s", self.window, Gdk.keyval_name(event.keyval)))
 
-		is_control_tab, is_control_page, is_control_escape = keyinfo.is_control_keys(event)
+		is_control = keyinfo.is_control_keys(event)
 
-		if is_control_tab:
+		if is_control.tab_key:
 			if log.query(log.DEBUG):
 				editor.debug_plugin_message(log.format("Applying editor workaround for Ctrl-Tab"))
 
 			event.state &= ~keyinfo.CONTROL_MASK
-			self._pre_key_press_control_keys = (is_control_tab, is_control_page, is_control_escape)
+			self._pre_key_press_control_keys = is_control
 
-		elif self._is_switching and is_control_escape:
+		elif self._is_switching and is_control.escape_key:
 			if log.query(log.DEBUG):
 				editor.debug_plugin_message(log.format("Applying editor workaround for Ctrl-Esc"))
 
 			event.keyval = Gdk.KEY_VoidSymbol
-			self._pre_key_press_control_keys = (is_control_tab, is_control_page, is_control_escape)
+			self._pre_key_press_control_keys = is_control
 
 	def key_press_event(self, event):
 		if log.query(log.DEBUG):
@@ -562,39 +562,44 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 			if log.query(log.DEBUG):
 				editor.debug_plugin_message(log.format("Completing editor workaround"))
 
-			is_control_tab, is_control_page, is_control_escape = self._pre_key_press_control_keys
+			is_control = self._pre_key_press_control_keys
 
-			if is_control_tab:
+			if is_control.tab_key:
 				event.state |= keyinfo.CONTROL_MASK
 
-			elif self._is_switching and is_control_escape:
+			elif self._is_switching and is_control.escape_key:
 				event.keyval = Gdk.KEY_Escape
 
 			self._pre_key_press_control_keys = None
 
 		else:
-			is_control_tab, is_control_page, is_control_escape = keyinfo.is_control_keys(event)
+			is_control = keyinfo.is_control_keys(event)
 
-		if is_control_tab and settings and settings['use-tabbar-order']:
+		if is_control.tab_key and settings and settings['use-tabbar-order']:
 			if log.query(log.INFO):
 				editor.debug_plugin_message(log.format("Coercing Ctrl-Tab into Ctrl-PgUp/PgDn because of settings"))
 
-			is_control_tab = False
-			is_control_page = True
+			is_control = is_control._replace(
+				tab=False, shift_tab=False, tab_key=False,
+				page_up=is_control.shift_tab,
+				page_up_key=is_control.shift_tab,
+				page_down=is_control.tab,
+				page_down_key=is_control.tab
+			)
 
-		if is_control_tab or is_control_page:
+		if is_control.tab_key or is_control.page_up or is_control.page_down:
 			if log.query(log.INFO):
 				editor.debug_plugin_message(log.format("Ctrl-Tab or Ctrl-PgUp/PgDn, switch tab"))
 
 			self.switch_tab(
-				use_mru_order=is_control_tab,
-				to_next_tab=keyinfo.is_next_key(event),
+				use_mru_order=is_control.tab_key,
+				to_next_tab=is_control.tab or is_control.page_down,
 				time=event.time
 			)
 			block_event = True
 
 		elif self._is_switching:
-			if is_control_escape:
+			if is_control.escape_key:
 				if log.query(log.INFO):
 					editor.debug_plugin_message(log.format("Ctrl-Esc while switching, cancel tab switching"))
 

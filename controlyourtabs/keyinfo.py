@@ -23,6 +23,7 @@ import gi
 gi.require_version('Gdk', '3.0')
 gi.require_version('Gtk', '3.0')
 
+from collections import namedtuple
 from gi.repository import Gdk, Gtk
 from . import editor, log
 
@@ -33,13 +34,12 @@ CONTROL_SHIFT_MASK = Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK
 
 CONTROL_KEY_LIST = [Gdk.KEY_Control_L, Gdk.KEY_Control_R] # will need to iterate through this list
 
-TAB_KEY_SET = set([Gdk.KEY_ISO_Left_Tab, Gdk.KEY_Tab, Gdk.KEY_KP_Tab]) # what is shift numpad tab?
-
-PAGE_KEY_SET = set([Gdk.KEY_Page_Up, Gdk.KEY_Page_Down, Gdk.KEY_KP_Page_Up, Gdk.KEY_KP_Page_Down])
-
-NEXT_KEY_SET = set([Gdk.KEY_Tab, Gdk.KEY_KP_Tab, Gdk.KEY_Page_Down, Gdk.KEY_KP_Page_Down])
-
-ESCAPE_KEY = Gdk.KEY_Escape
+KEY_SETS = {
+	'tab': set([Gdk.KEY_ISO_Left_Tab, Gdk.KEY_Tab, Gdk.KEY_KP_Tab]), # what is shift numpad tab?
+	'page_up': set([Gdk.KEY_Page_Up, Gdk.KEY_KP_Page_Up]),
+	'page_down': set([Gdk.KEY_Page_Down, Gdk.KEY_KP_Page_Down]),
+	'escape': set([Gdk.KEY_Escape])
+}
 
 MODIFIER_KEY_SET = set(
 	[
@@ -54,6 +54,15 @@ MODIFIER_KEY_SET = set(
 		Gdk.KEY_ISO_Level3_Shift, Gdk.KEY_ISO_Level3_Latch, Gdk.KEY_ISO_Level3_Lock,
 		Gdk.KEY_ISO_Level5_Shift, Gdk.KEY_ISO_Level5_Latch, Gdk.KEY_ISO_Level5_Lock,
 		Gdk.KEY_Mode_switch
+	]
+)
+
+ControlKeys = namedtuple(
+	'ControlKeys',
+	[
+		*[key for key in KEY_SETS.keys()],
+		*['shift_' + key for key in KEY_SETS.keys()],
+		*[key + '_key' for key in KEY_SETS.keys()]
 	]
 )
 
@@ -86,25 +95,15 @@ def is_control_keys(event):
 
 	is_control = state == CONTROL_MASK
 	is_control_shift = state == CONTROL_SHIFT_MASK
+	is_control_key = is_control or is_control_shift
 
-	is_tab = keyval in TAB_KEY_SET
-	is_page = keyval in PAGE_KEY_SET
-	is_escape = keyval == ESCAPE_KEY
+	is_key = {key: keyval in set for (key, set) in KEY_SETS.items()}
 
-	is_control_tab = (is_control or is_control_shift) and is_tab
-	is_control_page = is_control and is_page
-	is_control_escape = (is_control or is_control_shift) and is_escape
-
-	if log.query(log.DEBUG):
-		editor.debug_plugin_message(log.format("is_control_tab=%s, is_control_page=%s, is_control_escape=%s", is_control_tab, is_control_page, is_control_escape))
-
-	return (is_control_tab, is_control_page, is_control_escape)
-
-def is_next_key(event):
-	if log.query(log.DEBUG):
-		editor.debug_plugin_message(log.format("key=%s", Gdk.keyval_name(event.keyval)))
-
-	result = event.keyval in NEXT_KEY_SET
+	result = ControlKeys(**{
+		**{key: value and is_control for (key, value) in is_key.items()},
+		**{'shift_' + key: value and is_control_shift for (key, value) in is_key.items()},
+		**{key + '_key': value and is_control_key for (key, value) in is_key.items()}
+	})
 
 	if log.query(log.DEBUG):
 		editor.debug_plugin_message(log.format("result=%s", result))
