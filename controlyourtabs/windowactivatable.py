@@ -520,14 +520,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 			is_control_tab = False
 			is_control_page = True
 
-		if self._is_switching and is_control_escape:
-			if log.query(log.INFO):
-				editor.debug_plugin_message(log.format("Ctrl-Esc while switching, cancel tab switching"))
-
-			self.end_switching(do_revert=True)
-			block_event = True
-
-		elif is_control_tab or is_control_page:
+		if is_control_tab or is_control_page:
 			if log.query(log.INFO):
 				editor.debug_plugin_message(log.format("Ctrl-Tab or Ctrl-PgUp/PgDn, switch tab"))
 
@@ -538,17 +531,25 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 			)
 			block_event = True
 
-		elif self._is_switching and not self._is_tabwin_visible:
-			if log.query(log.INFO):
-				editor.debug_plugin_message(log.format("Normal key while switching and tabwin not visible, end tab switching"))
-
-			self.end_switching()
-
 		elif self._is_switching:
-			if log.query(log.INFO):
-				editor.debug_plugin_message(log.format("Normal key while switching, block key press"))
+			if is_control_escape:
+				if log.query(log.INFO):
+					editor.debug_plugin_message(log.format("Ctrl-Esc while switching, cancel tab switching"))
 
-			block_event = True
+				self.end_switching(do_revert=True)
+				block_event = True
+
+			elif not self._is_tabwin_visible:
+				if log.query(log.INFO):
+					editor.debug_plugin_message(log.format("Normal key while switching and tabwin not visible, end tab switching"))
+
+				self.end_switching()
+
+			else:
+				if log.query(log.INFO):
+					editor.debug_plugin_message(log.format("Normal key while switching, block key press"))
+
+				block_event = True
 
 		else:
 			if log.query(log.DEBUG):
