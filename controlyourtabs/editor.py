@@ -68,6 +68,7 @@ else:
 	use_new_tab_name_style = True
 	use_symbolic_icons = True
 	use_document_icons = False
+	use_editor_workaround = False
 
 if not Editor:
 	try:
@@ -80,6 +81,7 @@ if not Editor:
 		use_new_tab_name_style = False
 		use_symbolic_icons = True
 		use_document_icons = True
+		use_editor_workaround = True
 
 if not Editor:
 	try:
@@ -93,6 +95,7 @@ if not Editor:
 		use_new_tab_name_style = False
 		use_symbolic_icons = False
 		use_document_icons = True
+		use_editor_workaround = False
 
 try:
 	debug_plugin_message = Editor.debug_plugin_message

@@ -105,6 +105,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		self._is_switching = False
 		self._is_tabwin_visible = False
 		self._is_control_held = keyinfo.default_control_held()
+		self._pre_key_press_control_keys = None
 		self._initial_tab = None
 		self._multi = None
 		self._tab_models = tab_models
@@ -158,6 +159,7 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 		self._is_switching = None
 		self._is_tabwin_visible = None
 		self._is_control_held = None
+		self._pre_key_press_control_keys = None
 		self._initial_tab = None
 		self._multi = None
 		self._tab_models = None
@@ -229,6 +231,16 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 			'window',
 			tab_models
 		)
+
+		if editor.use_editor_workaround:
+			connect_handlers(
+				self, window,
+				[
+					'event',
+					'event-after'
+				],
+				'window'
+			)
 
 		self._multi = multi
 
@@ -437,6 +449,20 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 
 		self.schedule_tabwin_resize()
 
+	def on_window_event(self, window, event):
+		if log.query(log.DEBUG):
+			editor.debug_plugin_message(log.format("%s", window))
+
+		if event.type is Gdk.EventType.KEY_PRESS:
+			self.pre_key_press_event(event)
+
+	def on_window_event_after(self, window, event):
+		if log.query(log.DEBUG):
+			editor.debug_plugin_message(log.format("%s", window))
+
+		if event.type is Gdk.EventType.KEY_PRESS:
+			self._pre_key_press_control_keys = None
+
 	def on_tab_notify_name_state(self, tab, pspec, tab_model):
 		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, %s", self.window, tab))
@@ -505,13 +531,49 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 
 	# tab switching
 
+	def pre_key_press_event(self, event):
+		if log.query(log.DEBUG):
+			editor.debug_plugin_message(log.format("%s, key=%s", self.window, Gdk.keyval_name(event.keyval)))
+
+		is_control_tab, is_control_page, is_control_escape = keyinfo.is_control_keys(event)
+
+		if is_control_tab:
+			if log.query(log.DEBUG):
+				editor.debug_plugin_message(log.format("Applying editor workaround for Ctrl-Tab"))
+
+			event.state &= ~keyinfo.CONTROL_MASK
+			self._pre_key_press_control_keys = (is_control_tab, is_control_page, is_control_escape)
+
+		elif self._is_switching and is_control_escape:
+			if log.query(log.DEBUG):
+				editor.debug_plugin_message(log.format("Applying editor workaround for Ctrl-Esc"))
+
+			event.keyval = Gdk.KEY_VoidSymbol
+			self._pre_key_press_control_keys = (is_control_tab, is_control_page, is_control_escape)
+
 	def key_press_event(self, event):
 		if log.query(log.DEBUG):
 			editor.debug_plugin_message(log.format("%s, key=%s", self.window, Gdk.keyval_name(event.keyval)))
 
 		settings = self._settings
-		is_control_tab, is_control_page, is_control_escape = keyinfo.is_control_keys(event)
 		block_event = False
+
+		if self._pre_key_press_control_keys:
+			if log.query(log.DEBUG):
+				editor.debug_plugin_message(log.format("Completing editor workaround"))
+
+			is_control_tab, is_control_page, is_control_escape = self._pre_key_press_control_keys
+
+			if is_control_tab:
+				event.state |= keyinfo.CONTROL_MASK
+
+			elif self._is_switching and is_control_escape:
+				event.keyval = Gdk.KEY_Escape
+
+			self._pre_key_press_control_keys = None
+
+		else:
+			is_control_tab, is_control_page, is_control_escape = keyinfo.is_control_keys(event)
 
 		if is_control_tab and settings and settings['use-tabbar-order']:
 			if log.query(log.INFO):
