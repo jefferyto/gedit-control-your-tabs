@@ -411,7 +411,14 @@ class ControlYourTabsWindowActivatable(GObject.Object, editor.Editor.WindowActiv
 			editor.debug_plugin_message(log.format("%s, %s", window, tab))
 
 		if tab:
-			self.active_tab_changed(tab, tab_models[tab.get_parent()])
+			tab_model = tab_models[tab.get_parent()]
+
+			# in pluma/xed, when a tab is added to an empty notebook,
+			# active-tab-changed is emitted before tab-added
+			if tab not in tab_model:
+				self.track_tab(tab, tab_model)
+
+			self.active_tab_changed(tab, tab_model)
 
 	def on_window_key_press_event(self, window, event, tab_models):
 		if log.query(log.DEBUG):
