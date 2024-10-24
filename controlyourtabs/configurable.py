@@ -47,7 +47,7 @@ class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 				editor.debug_plugin_message(log.format("Loaded settings"))
 
 			widget = Gtk.CheckButton.new_with_label(
-				_("Use tab row order for Ctrl+Tab / Ctrl+Shift+Tab")
+				_("Ctrl+Tab and Ctrl+Shift+Tab switch to tabs on the left and right")
 			)
 
 			settings.bind(
