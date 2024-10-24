@@ -1,7 +1,7 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: gedit-control-your-tabs 0.5.0\n"
+"Project-Id-Version: gedit-control-your-tabs v0.5.1-dev\n"
 "POT-Creation-Date: 2024-10-24 08:17+0800\n"
 "PO-Revision-Date: 2014-12-03 21:27+0800\n"
 "Last-Translator: Jeffery To <jeffery.to@gmail.com>\n"

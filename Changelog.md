@@ -1,5 +1,7 @@
 # Changelog
 
+## [v0.5.1][Unreleased] - Unreleased
+
 ## [v0.5.0] - 2024-10-24
 * Added support for Pluma and xed
 * Added support for moving tabs with Ctrl-Shift-Page Up and
@@ -83,6 +85,7 @@
 * Initial release
 
 
+[Unreleased]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.5.0...main
 [v0.5.0]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.4.1...v0.5.0
 [v0.4.1]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.4.0...v0.4.1
 [v0.4.0]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.3.5...v0.4.0
