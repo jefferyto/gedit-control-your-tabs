@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gedit-control-your-tabs 0.4.2-dev\n"
-"POT-Creation-Date: 2024-06-08 03:17+0800\n"
+"POT-Creation-Date: 2024-10-24 08:17+0800\n"
 "PO-Revision-Date: 2014-12-03 21:27+0800\n"
 "Last-Translator: Jeffery To <jeffery.to@gmail.com>\n"
 "Language-Team: \n"
@@ -16,18 +16,18 @@ msgstr ""
 "X-Poedit-SearchPathExcluded-0: schemas\n"
 "X-Poedit-SearchPathExcluded-1: utils\n"
 
-#: __init__.py:90
-msgid "Documents"
+#: configurable.py:50
+msgid "Ctrl+Tab and Ctrl+Shift+Tab switch to tabs on the left and right"
 msgstr ""
 
-#: __init__.py:957
-msgid "Use tab row order for Ctrl+Tab / Ctrl+Shift+Tab"
+#: configurable.py:66
+msgid "Unable to load preferences"
 msgstr ""
 
-#: __init__.py:973
-msgid "Sorry, no preferences are available for this version of gedit."
-msgstr ""
-
-#: tabinfo.py:83
+#: tabinfo.py:86
 msgid "Read-Only"
+msgstr ""
+
+#: windowactivatable.py:83
+msgid "Documents"
 msgstr ""
