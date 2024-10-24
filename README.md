@@ -3,7 +3,7 @@
 Switch between document tabs using Ctrl+Tab and other common keyboard
 shortcuts  
 <https://github.com/jefferyto/gedit-control-your-tabs>  
-v0.4.2-dev
+v0.5.0
 
 All bug reports, feature requests, and miscellaneous comments are
 welcome at the [project issue tracker].
