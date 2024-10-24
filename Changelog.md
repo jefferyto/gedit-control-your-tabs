@@ -1,6 +1,13 @@
 # Changelog
 
 ## [v0.4.2-dev][Unreleased] - Unreleased
+* Added support for Pluma and xed
+* Added support for moving tabs with Ctrl-Shift-Page Up and
+  Ctrl-Shift-Page Down ([#13])
+* Added support for switching tabs with Tab/Page Up/Page Down keys in
+  numeric keypad
+* Settings schema can be stored in a shared schemas location instead of
+  the plugin "schemas" directory
 
 ## [v0.4.1] - 2024-06-07
 * Fixed error when loaded in gedit 47
@@ -92,5 +99,6 @@
 
 [#4]: https://github.com/jefferyto/gedit-control-your-tabs/pull/4
 [#8]: https://github.com/jefferyto/gedit-control-your-tabs/pull/8
+[#13]: https://github.com/jefferyto/gedit-control-your-tabs/issues/13
 [#15]: https://github.com/jefferyto/gedit-control-your-tabs/pull/15
 [#17]: https://github.com/jefferyto/gedit-control-your-tabs/issues/17

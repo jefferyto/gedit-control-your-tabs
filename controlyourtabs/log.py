@@ -19,9 +19,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import gi
+gi.require_version('GLib', '2.0')
+
 import os
 from gi.repository import GLib
 from .utils import debug_str
+from . import editor
 
 
 # for convenience, in decreasing order of severity
@@ -49,9 +53,14 @@ for (level, name) in LEVELS_TO_NAMES.items():
 # messages equal or higher in severity will be printed
 output_level = MESSAGE
 
-name = os.getenv('GEDIT_CONTROL_YOUR_TABS_DEBUG_LEVEL', '').lower()
-if name in NAMES_TO_LEVELS:
-	output_level = NAMES_TO_LEVELS[name]
+gedit_env_name = os.getenv('GEDIT_CONTROL_YOUR_TABS_DEBUG_LEVEL', '')
+editor_env_name = os.getenv(
+	'%s_CONTROL_YOUR_TABS_DEBUG_LEVEL' % editor.name.upper(),
+	gedit_env_name
+)
+env_name = editor_env_name.lower()
+if env_name in NAMES_TO_LEVELS:
+	output_level = NAMES_TO_LEVELS[env_name]
 
 # set by query(), used by name()
 last_queried_level = None
@@ -101,7 +110,10 @@ def name(log_level=None):
 	if log_level is None:
 		log_level = last_queried_level
 
-	return LEVELS_TO_NAMES[highest(log_level)] if log_level is not None else 'unknown'
+	if log_level is None:
+		return "unknown"
+
+	return LEVELS_TO_NAMES[highest(log_level)]
 
 def format(message, *args):
 	msg = message % tuple(debug_str(arg) for arg in args)

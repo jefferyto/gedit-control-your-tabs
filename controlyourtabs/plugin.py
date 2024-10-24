@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# __init__.py
+# plugin.py
 # This file is part of Control Your Tabs, a plugin for gedit
 #
 # Copyright (C) 2010-2013, 2017-2018, 2020, 2023-2024 Jeffery To <jeffery.to@gmail.com>
@@ -19,6 +19,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .configurable import ControlYourTabsConfigurable
-from .windowactivatable import ControlYourTabsWindowActivatable
+import gi
+gi.require_version('Peas', '1.0')
+
+import os.path
+from gi.repository import Peas
+
+
+data_dir = Peas.Engine.get_default().get_plugin_info('controlyourtabs').get_data_dir()
+
+try:
+	import gettext
+	gettext.bindtextdomain(
+		'gedit-control-your-tabs',
+		os.path.join(data_dir, 'locale')
+	)
+	_ = lambda s: gettext.dgettext('gedit-control-your-tabs', s)
+except:
+	_ = lambda s: s
 
