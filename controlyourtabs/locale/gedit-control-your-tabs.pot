@@ -1,3 +1,4 @@
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: gedit-control-your-tabs v0.5.1-dev\n"
