@@ -2,32 +2,38 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gedit-control-your-tabs v0.5.1-dev\n"
-"POT-Creation-Date: 2024-10-24 08:17+0800\n"
+"POT-Creation-Date: 2024-12-24 09:46+0800\n"
 "PO-Revision-Date: 2014-12-03 21:27+0800\n"
 "Last-Translator: Jeffery To <jeffery.to@gmail.com>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.4.2\n"
-"X-Poedit-KeywordsList: _;gettext;gettext_noop\n"
-"X-Poedit-Basepath: ..\n"
+"X-Generator: Poedit 3.5\n"
+"X-Poedit-Basepath: ../..\n"
 "X-Poedit-SearchPath-0: .\n"
-"X-Poedit-SearchPathExcluded-0: schemas\n"
-"X-Poedit-SearchPathExcluded-1: utils\n"
 
-#: configurable.py:50
+#: controlyourtabs/configurable.py:50
+#: controlyourtabs/schemas/com.thingsthemselves.gedit.plugins.controlyourtabs.gschema.xml:7
+#: controlyourtabs/schemas/com.thingsthemselves.pluma.plugins.controlyourtabs.gschema.xml:7
+#: controlyourtabs/schemas/com.thingsthemselves.xed.plugins.controlyourtabs.gschema.xml:7
 msgid "Ctrl+Tab and Ctrl+Shift+Tab switch to tabs on the left and right"
 msgstr ""
 
-#: configurable.py:66
+#: controlyourtabs/configurable.py:66
 msgid "Unable to load preferences"
 msgstr ""
 
-#: tabinfo.py:86
+#: controlyourtabs/schemas/com.thingsthemselves.gedit.plugins.controlyourtabs.gschema.xml:6
+#: controlyourtabs/schemas/com.thingsthemselves.pluma.plugins.controlyourtabs.gschema.xml:6
+#: controlyourtabs/schemas/com.thingsthemselves.xed.plugins.controlyourtabs.gschema.xml:6
+msgid "Use tab row order"
+msgstr ""
+
+#: controlyourtabs/tabinfo.py:86
 msgid "Read-Only"
 msgstr ""
 
-#: windowactivatable.py:83
+#: controlyourtabs/windowactivatable.py:83
 msgid "Documents"
 msgstr ""
