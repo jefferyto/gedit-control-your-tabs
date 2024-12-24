@@ -4,7 +4,7 @@
 		<key name="use-tabbar-order" type="b">
 			<default>false</default>
 			<summary>Use tab row order</summary>
-			<description>Ctrl+Tab and Ctrl+Shift+Tab switch to tabs on the left and right.</description>
+			<description>Ctrl+Tab and Ctrl+Shift+Tab switch to tabs on the left and right</description>
 		</key>
 	</schema>
 </schemalist>
