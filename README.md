@@ -17,9 +17,9 @@ releases.
 
 This plugin requires one of these text editors:
 
-*   gedit 3.12 or newer
-*   Pluma 1.26.0 or newer
-*   xed 1.4.0 or newer
+*   gedit 3.12 or later
+*   Pluma 1.26.0 or later
+*   xed 1.4.0 or later
 
 The last version compatible with gedit 2 is [v0.1.2], and the last
 version compatible with gedit 3.0&ndash;3.10 is [v0.3.5].
