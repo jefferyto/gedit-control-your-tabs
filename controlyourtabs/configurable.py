@@ -67,7 +67,10 @@ class ControlYourTabsConfigurable(GObject.Object, PeasGtk.Configurable):
 			)
 
 		box = Gtk.Box.new(Gtk.Orientation.VERTICAL, 0)
-		box.set_border_width(5)
+		box.set_margin_start(12)
+		box.set_margin_end(12)
+		box.set_margin_top(12)
+		box.set_margin_bottom(12)
 		box.add(widget)
 
 		return box
