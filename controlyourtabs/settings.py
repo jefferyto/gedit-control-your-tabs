@@ -52,6 +52,6 @@ def get_settings():
 	if not schema_source:
 		schema_source = default_schema_source
 
-	schema = schema_source.lookup(schema_id, True) if schema_source else None
+	schema = schema_source.lookup(schema_id, True)
 	return Gio.Settings.new_full(schema, None, None) if schema else None
 
