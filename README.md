@@ -95,3 +95,18 @@ Inspired by:
 Copyright © 2010-2013, 2017-2018, 2020, 2023-2024 Jeffery To <jeffery.to@gmail.com>
 
 Available under GNU General Public License version 3
+
+## Other plugins you may like
+
+*   [Ex-Mortis] (gedit only)  
+    Reopen closed windows and optionally restore windows between sessions
+
+*   [Python Console]  
+    Interactive Python console standing in the bottom panel
+
+*   [Tab Group Salute] (gedit only)  
+    Switch between tab groups using Ctrl+\<key above Tab\>
+
+[Ex-Mortis]: https://github.com/jefferyto/gedit-ex-mortis
+[Python Console]: https://github.com/jefferyto/gedit-pythonconsole
+[Tab Group Salute]: https://github.com/jefferyto/gedit-tab-group-salute
