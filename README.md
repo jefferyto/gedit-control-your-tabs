@@ -22,7 +22,7 @@ This plugin requires one of these text editors:
 *   xed 1.4.0 or later
 
 The last version compatible with gedit 2 is [v0.1.2], and the last
-version compatible with gedit 3.0&ndash;3.10 is [v0.3.5].
+version compatible with gedit 3.0–3.10 is [v0.3.5].
 
 [v0.1.2]: https://github.com/jefferyto/gedit-control-your-tabs/releases/tag/v0.1.2
 [v0.3.5]: https://github.com/jefferyto/gedit-control-your-tabs/releases/tag/v0.3.5
@@ -36,7 +36,7 @@ version compatible with gedit 3.0&ndash;3.10 is [v0.3.5].
     * Pluma: `~/.local/share/pluma/plugins`
     * xed: `~/.local/share/xed/plugins`
 3.  Restart the text editor, then activate the plugin in the **Plugins**
-    tab of the text editor's **Preferences** window.
+    tab of the text editor’s **Preferences** window.
 
 [latest release]: https://github.com/jefferyto/gedit-control-your-tabs/releases/latest
 
@@ -92,6 +92,6 @@ Inspired by:
 
 ## License
 
-Copyright &copy; 2010-2013, 2017-2018, 2020, 2023-2024 Jeffery To <jeffery.to@gmail.com>
+Copyright © 2010-2013, 2017-2018, 2020, 2023-2024 Jeffery To <jeffery.to@gmail.com>
 
 Available under GNU General Public License version 3
