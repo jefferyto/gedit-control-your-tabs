@@ -20,21 +20,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import gi
+gi.require_version('GLib', '2.0')
 gi.require_version('Peas', '1.0')
 
 import os.path
-from gi.repository import Peas
+from gi.repository import GLib, Peas
 
 
 data_dir = Peas.Engine.get_default().get_plugin_info('controlyourtabs').get_data_dir()
 
 try:
-	import gettext
-	gettext.bindtextdomain(
-		'gedit-control-your-tabs',
-		os.path.join(data_dir, 'locale')
-	)
-	_ = lambda s: gettext.dgettext('gedit-control-your-tabs', s)
+	import locale
+	locale.bindtextdomain('gedit-control-your-tabs', os.path.join(data_dir, 'locale'))
+	locale.bind_textdomain_codeset('gedit-control-your-tabs', 'UTF-8')
 except:
-	_ = lambda s: s
+	pass
+
+_ = lambda s: GLib.dgettext('gedit-control-your-tabs', s)
 
