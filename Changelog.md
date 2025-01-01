@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.5.1][Unreleased] - Unreleased
+## [v0.5.1] - 2025-01-01
 * Changed license to GPL-2.0-or-later ([#20])
 
 ## [v0.5.0] - 2024-10-24
@@ -86,7 +86,7 @@
 * Initial release
 
 
-[Unreleased]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.5.0...main
+[v0.5.1]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.5.0...v0.5.1
 [v0.5.0]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.4.1...v0.5.0
 [v0.4.1]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.4.0...v0.4.1
 [v0.4.0]: https://github.com/jefferyto/gedit-control-your-tabs/compare/v0.3.5...v0.4.0
