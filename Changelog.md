@@ -1,6 +1,7 @@
 # Changelog
 
 ## [v0.5.1][Unreleased] - Unreleased
+* Changed license to GPL-2.0-or-later ([#20])
 
 ## [v0.5.0] - 2024-10-24
 * Added support for Pluma and xed
@@ -105,3 +106,4 @@
 [#13]: https://github.com/jefferyto/gedit-control-your-tabs/issues/13
 [#15]: https://github.com/jefferyto/gedit-control-your-tabs/pull/15
 [#17]: https://github.com/jefferyto/gedit-control-your-tabs/issues/17
+[#20]: https://github.com/jefferyto/gedit-control-your-tabs/issues/20
