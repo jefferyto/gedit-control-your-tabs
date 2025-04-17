@@ -17,12 +17,12 @@ releases.
 
 This plugin requires one of these text editors:
 
-*   gedit 3.12–48.1
+*   gedit 3.12 to 48.1
 *   Pluma 1.26.0 or later
 *   xed 1.4.0 or later
 
 The last version compatible with gedit 2 is [v0.1.2], and the last
-version compatible with gedit 3.0–3.10 is [v0.3.5].
+version compatible with gedit 3.0 to 3.10 is [v0.3.5].
 
 [v0.1.2]: https://github.com/jefferyto/gedit-control-your-tabs/releases/tag/v0.1.2
 [v0.3.5]: https://github.com/jefferyto/gedit-control-your-tabs/releases/tag/v0.3.5
@@ -42,7 +42,7 @@ version compatible with gedit 3.0–3.10 is [v0.3.5].
 
 ### Packages
 
-*   [Fedora (official repo)] (Fedora 29–42):
+*   [Fedora (official repo)] (Fedora 29 to 42):
     `sudo dnf install gedit-control-your-tabs`
 
 [Fedora (official repo)]: https://packages.fedoraproject.org/pkgs/gedit-control-your-tabs/gedit-control-your-tabs
