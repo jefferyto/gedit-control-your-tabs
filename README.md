@@ -17,7 +17,7 @@ releases.
 
 This plugin requires one of these text editors:
 
-*   gedit 3.12 or later
+*   gedit 3.12–48.1
 *   Pluma 1.26.0 or later
 *   xed 1.4.0 or later
 
