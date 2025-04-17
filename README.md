@@ -42,7 +42,7 @@ version compatible with gedit 3.0–3.10 is [v0.3.5].
 
 ### Packages
 
-*   [Fedora (official repo)] (Fedora 29 and later, Rawhide):
+*   [Fedora (official repo)] (Fedora 29–42):
     `sudo dnf install gedit-control-your-tabs`
 
 [Fedora (official repo)]: https://packages.fedoraproject.org/pkgs/gedit-control-your-tabs/gedit-control-your-tabs
